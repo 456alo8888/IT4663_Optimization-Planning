@@ -1,0 +1,36 @@
+====================================
+5
+5 4 3 9 10 1 8 2 6 7
+best cost 37 with method ga
+violation: 0
+runtime 0.15757131576538086 seconds
+====================================
+5
+7 10 9 5 4 3 8 2 1 6
+best cost 32 with method ga
+violation: 7
+runtime 0.14809870719909668 seconds
+====================================
+5
+7 10 9 5 3 4 2 8 1 6
+best cost 32 with method ga
+violation: 8
+runtime 0.15155482292175293 seconds
+====================================
+5
+5 4 3 9 10 1 2 8 6 7
+best cost 37 with method ga
+violation: 0
+runtime 0.12045097351074219 seconds
+====================================
+5
+6 1 8 2 3 4 5 9 10 7
+best cost 32 with method ga
+violation: 7
+runtime 0.12252521514892578 seconds
+====================================
+5
+5 4 3 9 10 1 8 2 6 7
+best cost 37 with method ga
+violation: 0
+runtime 0.13253211975097656 seconds
