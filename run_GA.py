@@ -2,6 +2,7 @@
 import random
 import math
 import time
+import argparse
 from copy import deepcopy
 
 class CBUSSolver:
@@ -137,28 +138,30 @@ class CBUSSolver:
         
         return child if self.is_valid_route(child) else parent1
     
-    def simulated_annealing(self, initial_route, max_iter=5000, T0=1000, alpha=0.995):
+    def simulated_annealing(self, initial_route, coef = 100, max_iter=5000, T0=1000, alpha=0.995):
         """Simulated Annealing"""
         current = initial_route[:]
         current_cost = self.calculate_route_cost(current)
+        current_violation = self.calculate_route_violation(current)
+        current_obj = current_cost + coef * current_violation
         best = current[:]
-        best_cost = current_cost
+        best_obj = current_obj
         T = T0
         
         for _ in range(max_iter):
             # Generate neighbor
             neighbor = self.swap_mutation(current)
             neighbor_cost = self.calculate_route_cost(neighbor)
-            
+            neighbor_violation = self.calculate_route_violation(neighbor)
+            neighbor_obj = neighbor_cost + coef * neighbor_violation
             # Accept or reject
-            delta = neighbor_cost - current_cost
+            delta = neighbor_obj - current_obj
             if delta < 0 or random.random() < math.exp(-delta / T):
                 current = neighbor
-                current_cost = neighbor_cost
-                
-                if current_cost < best_cost:
+                current_obj = neighbor_obj
+                if current_obj < best_obj:
                     best = current[:]
-                    best_cost = current_cost
+                    best_obj = current_obj
             
             T *= alpha
             if T < 0.1:
@@ -242,8 +245,8 @@ class CBUSSolver:
         for gen in range(generations):
             # Check time limit
 
-            if time_limit and start_time and (time.time() - start_time) > time_limit:
-                break
+            # if time_limit and start_time and (time.time() - start_time) > time_limit:
+            #     break
             
             # Early stopping
             if no_improve_count >= max_no_improve:
@@ -302,7 +305,7 @@ class CBUSSolver:
         
         return best_route
     
-    def solve(self, method='greedy', time_limit=10):
+    def solve(self, method='greedy', time_limit=10, **kwargs):
         """Main solver with multiple methods"""
         start_time = time.time()
         
@@ -312,10 +315,22 @@ class CBUSSolver:
             route = self.nearest_neighbor_initialize()
         elif method == 'sa':
             initial = self.nearest_neighbor_initialize()
-            route = self.simulated_annealing(initial)
+            route = self.simulated_annealing(
+                initial,
+                coef=kwargs.get('sa_coef', 100),
+                max_iter=kwargs.get('sa_max_iter', 5000),
+                T0=kwargs.get('sa_T0', 1000),
+                alpha=kwargs.get('sa_alpha', 0.995)
+            )
         else:
-
-            route = self.genetic_algorithm()
+            route = self.genetic_algorithm(
+                pop_size=kwargs.get('pop_size', 100),
+                generations=kwargs.get('generations', 200),
+                mutation_rate=kwargs.get('mutation_rate', 0.2),
+                max_no_improve=kwargs.get('max_no_improve', 50),
+                time_limit=time_limit,
+                start_time=start_time
+            )
             print("Returned from GA")
 
         end_time = time.time()
@@ -378,7 +393,7 @@ def read_input_from_file(input_file):
             distance_matrix.append(row)
     return n , k , distance_matrix
 
-def solve_from_file(input_file, output_file):
+def solve_from_file(input_file, output_file, method='ga', **kwargs):
     import sys 
     import os 
 
@@ -390,46 +405,104 @@ def solve_from_file(input_file, output_file):
     best_cost = float('inf')
     best_method = None 
 
-    
-    if n <= 500: 
-        method_pool = ['ga']
-    else:
-        method_pool = ['ga']
+    method_pool = [method] if method else ['ga']
 
-    for method in method_pool:
+    for m in method_pool:
         try:
-            route , runtime, violation = solver.solve(method=method, time_limit=3)
+            route , runtime, violation = solver.solve(method=m, time_limit=kwargs.get('time_limit', 10), **kwargs)
             
             if solver.is_valid_route(route):
                 cost = solver.calculate_route_cost(route)
                 if cost < best_cost:
                     best_route = route
                     best_cost = cost
-                    best_method = method 
-        except:
+                    best_method = m
+        except Exception as e:
+            print(f"Error with method {m}: {e}")
             continue
+    
+    if best_route is None:
+        print("No valid route found!")
+        return None, float('inf')
+    
     print(n)
     print(' '.join(map(str, best_route[1:-1])))
     with open(output_file, 'a') as f:
-        f.write(f"{n}\n")
-        f.write(' '.join(map(str, best_route[1:-1])))
-        f.write(f'\nbest cost {best_cost} with method {best_method}\n')
-        f.write(f'violation: {violation}\n') 
-        f.write(f"runtime {runtime} seconds\n")
+        f.write(f"\n{'='*60}\n")
+        f.write(f"Test: {test_name}\n")
+        f.write(f"n={n}, k={k}\n")
+        f.write(f"Method: {best_method}\n")
+        if best_method == 'ga':
+            f.write(f"  pop_size={kwargs.get('pop_size', 100)}, "
+                   f"generations={kwargs.get('generations', 200)}, "
+                   f"mutation_rate={kwargs.get('mutation_rate', 0.2)}\n")
+        elif best_method == 'sa':
+            f.write(f"  T0={kwargs.get('sa_T0', 1000)}, "
+                   f"alpha={kwargs.get('sa_alpha', 0.995)}, "
+                   f"max_iter={kwargs.get('sa_max_iter', 5000)}, "
+                   f"coef={kwargs.get('sa_coef', 100)}\n")
+        f.write(f"Best cost: {best_cost}\n")
+        f.write(f"Violations: {violation}\n") 
+        f.write(f"Runtime: {runtime:.2f} seconds\n")
+        f.write(f"Route: {' '.join(map(str, best_route[1:-1]))}\n")
     return best_route , best_cost
 
 
 if __name__ == "__main__":
-
     import sys 
     import os
-    if len(sys.argv) > 1:
-        input_file = sys.argv[1]
+    
+    parser = argparse.ArgumentParser(description='CBUS Solver with GA and SA')
+    parser.add_argument('-i', '--input', type=str, help='Input file path')
+    parser.add_argument('-o', '--output', type=str, help='Output file path (optional)')
+    parser.add_argument('-m', '--method', type=str, default='ga', 
+                       choices=['ga', 'sa', 'greedy', 'nearest'],
+                       help='Solution method (default: ga)')
+    
+    # GA parameters
+    parser.add_argument('--pop_size', type=int, default=100, help='GA population size')
+    parser.add_argument('--generations', type=int, default=200, help='GA number of generations')
+    parser.add_argument('--mutation_rate', type=float, default=0.2, help='GA mutation rate')
+    parser.add_argument('--max_no_improve', type=int, default=50, help='GA early stopping threshold')
+    
+    # SA parameters
+    parser.add_argument('--sa_T0', type=float, default=1000, help='SA initial temperature')
+    parser.add_argument('--sa_alpha', type=float, default=0.995, help='SA cooling rate')
+    parser.add_argument('--sa_max_iter', type=int, default=5000, help='SA max iterations')
+    parser.add_argument('--sa_coef', type=float, default=100, help='SA violation coefficient')
+    
+    # General parameters
+    parser.add_argument('--time_limit', type=int, default=10, help='Time limit in seconds')
+    
+    args = parser.parse_args()
+    
+    if args.input:
+        input_file = args.input
         test_name = os.path.splitext(os.path.basename(input_file))[0]
+        
         # Create output directory if it doesn't exist
         output_dir = os.path.join(os.path.dirname(__file__), 'output')
         os.makedirs(output_dir, exist_ok=True)
-        output_file = os.path.join(output_dir, f"{test_name}_output.txt")
-        best_route , best_cost = solve_from_file(input_file, output_file)
+        
+        if args.output:
+            output_file = args.output
+        else:
+            output_file = os.path.join(output_dir, f"{test_name}_output.txt")
+        
+        # Prepare kwargs
+        kwargs = {
+            'pop_size': args.pop_size,
+            'generations': args.generations,
+            'mutation_rate': args.mutation_rate,
+            'max_no_improve': args.max_no_improve,
+            'sa_T0': args.sa_T0,
+            'sa_alpha': args.sa_alpha,
+            'sa_max_iter': args.sa_max_iter,
+            'sa_coef': args.sa_coef,
+            'time_limit': args.time_limit
+        }
+        
+        best_route, best_cost = solve_from_file(input_file, output_file, method=args.method, **kwargs)
+        print(f"\nBest cost: {best_cost}")
     else:    
         main()
