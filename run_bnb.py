@@ -139,13 +139,20 @@ class CBUSSolver:
                 # mode 4
                 if self.bound_mode == 4:
                     remaining_nodes = [
-                        i for i in range(self.num_points) if not self.visited[i]
+                        i
+                        for i in range(1, self.num_points)
+                        if not self.visited[i] and i != next_point
                     ]
-                    lb += (
-                        prim_mst(self.dist_matrix, remaining_nodes)
-                        + self.min_out[next_point]
-                        + self.min_in[0]
-                    )
+
+                    if not remaining_nodes:
+                        lb = new_cost + self.dist_matrix[next_point][0]
+                    else:
+                        lb = (
+                            new_cost
+                            + prim_mst(self.dist_matrix, remaining_nodes)
+                            + self.min_out[next_point]
+                            + self.min_in[0]
+                        )
                 #####
                 if lb < self.min_cost:
                     self.visited[next_point] = True
