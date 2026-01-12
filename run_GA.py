@@ -211,7 +211,7 @@ class CBUSSolver:
     
     
     def genetic_algorithm(self, pop_size=100, generations=200, mutation_rate=0.2, 
-                         max_no_improve=50, time_limit=None, start_time=None):
+                         max_no_improve=50, function_choice = 1 , coef = 100,  start_time=None):
         """Genetic Algorithm with early stopping"""
         # Adjust population size based on problem size
         if self.n > 100:
@@ -219,15 +219,17 @@ class CBUSSolver:
         
         # Initialize population
         population = []
-        population.append(self.greedy_initialize())
-        population.append(self.nearest_neighbor_initialize())
+        population.append(self.naive_initialize())
+
+        # population.append(self.greedy_initialize())
+        # population.append(self.nearest_neighbor_initialize())
         
 
 
         
         while len(population) < pop_size:
-            route = self.greedy_initialize()
-            # route = self.naive_initialize()
+            # route = self.greedy_initialize()
+            route = self.naive_initialize()
             num_swaps = random.randint(10, 30)  # Fixed range for all sizes
             for _ in range(num_swaps):
                 route = self.swap_mutation(route)
@@ -235,7 +237,11 @@ class CBUSSolver:
 
         
         # Evaluate fitness
-        fitness = [ self.fitness_function_1(r) for r in population] #first choice
+
+        if function_choice == 1:
+            fitness = [ self.fitness_function_1(r , c= coef) for r in population] #first choice
+        else:
+            fitness = [ self.fitness_function_2(r , c = coef) for r in population] # second choice
     
         
         best_route = max(zip(population, fitness), key=lambda x: x[1])[0]
@@ -243,11 +249,8 @@ class CBUSSolver:
         no_improve_count = 0
         
         for gen in range(generations):
-            # Check time limit
+           
 
-            # if time_limit and start_time and (time.time() - start_time) > time_limit:
-            #     break
-            
             # Early stopping
             if no_improve_count >= max_no_improve:
                 break
@@ -286,7 +289,11 @@ class CBUSSolver:
                 new_population.append(child)
             
             population = new_population[:pop_size]  # Ensure correct size
-            fitness = [self.fitness_function_1(r) for r in population]
+
+            if function_choice == 1:
+                fitness = [self.fitness_function_1(r , c = coef) for r in population]
+            else:
+                fitness = [self.fitness_function_2(r , c = coef) for r in population]
             
             # Update best
             current_best = max(zip(population, fitness), key=lambda x: x[1])[0]
@@ -305,7 +312,7 @@ class CBUSSolver:
         
         return best_route
     
-    def solve(self, method='greedy', time_limit=10, **kwargs):
+    def solve(self, method='greedy', **kwargs):
         """Main solver with multiple methods"""
         start_time = time.time()
         
@@ -314,7 +321,7 @@ class CBUSSolver:
         elif method == 'nearest':
             route = self.nearest_neighbor_initialize()
         elif method == 'sa':
-            initial = self.nearest_neighbor_initialize()
+            initial = self.naive_initialize()
             route = self.simulated_annealing(
                 initial,
                 coef=kwargs.get('sa_coef', 100),
@@ -328,7 +335,8 @@ class CBUSSolver:
                 generations=kwargs.get('generations', 200),
                 mutation_rate=kwargs.get('mutation_rate', 0.2),
                 max_no_improve=kwargs.get('max_no_improve', 50),
-                time_limit=time_limit,
+                function_choice = kwargs.get('function_choice', 1),
+                coef = kwargs.get('ga_coef', 10),
                 start_time=start_time
             )
             print("Returned from GA")
@@ -365,7 +373,7 @@ def main():
 
     for method in method_pool:
         try:
-            route , runtime, violation = solver.solve(method=method, time_limit=3)
+            route , runtime, violation = solver.solve(method=method)
             
             if solver.is_valid_route(route):
                 cost = solver.calculate_route_cost(route)
@@ -409,7 +417,7 @@ def solve_from_file(input_file, output_file, method='ga', **kwargs):
 
     for m in method_pool:
         try:
-            route , runtime, violation = solver.solve(method=m, time_limit=kwargs.get('time_limit', 10), **kwargs)
+            route , runtime, violation = solver.solve(method=m, **kwargs)
             
             if solver.is_valid_route(route):
                 cost = solver.calculate_route_cost(route)
@@ -435,7 +443,10 @@ def solve_from_file(input_file, output_file, method='ga', **kwargs):
         if best_method == 'ga':
             f.write(f"  pop_size={kwargs.get('pop_size', 100)}, "
                    f"generations={kwargs.get('generations', 200)}, "
-                   f"mutation_rate={kwargs.get('mutation_rate', 0.2)}\n")
+                   f"mutation_rate={kwargs.get('mutation_rate', 0.2)}, "
+                   f"max_no_improve={kwargs.get('max_no_improve', 50)}, "
+                   f"function_choice={kwargs.get('function_choice', 1)}, "
+                   f"coef={kwargs.get('ga_coef', 100)}\n")
         elif best_method == 'sa':
             f.write(f"  T0={kwargs.get('sa_T0', 1000)}, "
                    f"alpha={kwargs.get('sa_alpha', 0.995)}, "
@@ -464,6 +475,8 @@ if __name__ == "__main__":
     parser.add_argument('--generations', type=int, default=200, help='GA number of generations')
     parser.add_argument('--mutation_rate', type=float, default=0.2, help='GA mutation rate')
     parser.add_argument('--max_no_improve', type=int, default=50, help='GA early stopping threshold')
+    parser.add_argument('--function_choice', type=float, default=1, help='choose lose function for GA')
+    parser.add_argument('--ga_coef', type=float, default=100, help='GA violation coefficient')
     
     # SA parameters
     parser.add_argument('--sa_T0', type=float, default=1000, help='SA initial temperature')
@@ -471,8 +484,6 @@ if __name__ == "__main__":
     parser.add_argument('--sa_max_iter', type=int, default=5000, help='SA max iterations')
     parser.add_argument('--sa_coef', type=float, default=100, help='SA violation coefficient')
     
-    # General parameters
-    parser.add_argument('--time_limit', type=int, default=10, help='Time limit in seconds')
     
     args = parser.parse_args()
     
@@ -499,7 +510,8 @@ if __name__ == "__main__":
             'sa_alpha': args.sa_alpha,
             'sa_max_iter': args.sa_max_iter,
             'sa_coef': args.sa_coef,
-            'time_limit': args.time_limit
+            'function_choice': args.function_choice,
+            'ga_coef': args.ga_coef
         }
         
         best_route, best_cost = solve_from_file(input_file, output_file, method=args.method, **kwargs)
