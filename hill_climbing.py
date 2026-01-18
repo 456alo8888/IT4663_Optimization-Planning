@@ -1,204 +1,275 @@
-
-import copy 
+import copy
 import random
-import numpy as np
-from collections import defaultdict
 import time
-from collections import deque
 
-class Graph_Hill_Climbing():
-    def __init__(self, num_vertices, distance_matrix, capacity):
+class Greedy_Search:
+    def __init__(self, num_vertices, capacity, distance):
         self.num_vertices = num_vertices
-        self.edges = list()
-        self.vertices = [i for i in range(num_vertices)]
-        self.num_edges = None
-        self.frontier = list()
-        self.explored_set = list()
-        self.distance_matrix = distance_matrix
-        self.visited = [False for i in range(num_vertices)]
-        self.cost = [0 for i in range(num_vertices)]
-        self.ancestor = [0 for i in range(num_vertices)]
-        self.num_passengers = (num_vertices-1)//2
         self.capacity = capacity
+        self.distance = distance
+        self.pickup = list(range(1, num_vertices // 2 + 1))
+        self.dropoff = list(range(num_vertices // 2 + 1, num_vertices + 1))
         
-    def update_edges(self):
-        for row in range(np.shape(self.distance_matrix)[0]):
-            row_edges = list()
-            for col in range(np.shape(self.distance_matrix)[1]):
-                if row == col:
-                    row_edges.append([row, col, 1e9])
-                else:
-                    row_edges.append([row, col, self.distance_matrix[row][col]])
-            self.edges.append(row_edges)
+    def children(self, parent_state):
+        current_location = parent_state[-1] if parent_state else 0
+        current_capacity = self.current_capacity(parent_state)
+        
+        possible_locations = []
+        
+        for location in self.pickup + self.dropoff:
+            if location in parent_state:
+                continue
+                
+            if location in self.pickup:
+                if current_capacity + 1 <= self.capacity:
+                    possible_locations.append(location)
+            else:  
+                corresponding_pickup = location - self.num_vertices // 2
+                if corresponding_pickup in parent_state:
+                    possible_locations.append(location)
+        
+        return possible_locations
     
-    def check_capacity(self, config):
-        cap = 0
-        for i in range(1,len(config)):
-            if config[i] > self.num_passengers:
-                cap -= 1
+    def current_capacity(self, state):
+        capacity = 0
+        for location in state:
+            if location in self.pickup:
+                capacity += 1
             else:
-                cap += 1
-            if cap > self.capacity:
-                return False
+                capacity -= 1
+        return capacity
+    
+    def heuristic_greedy_function(self, current_location, next_location):
+        return self.distance[current_location][next_location]
+    
+    def choose_node(self, parent_state, children_states):
+        current_location = parent_state[-1] if parent_state else 0
+        current_capacity = self.current_capacity(parent_state)
+        
+        candidates = []
+        for child in children_states:
+            distance = self.heuristic_greedy_function(current_location, child)
+            candidates.append((child, distance))
+        
+        candidates.sort(key=lambda x: x[1])
+        
+        if current_capacity >= self.capacity:
+            for child, dist in candidates:
+                if child in self.dropoff:
+                    return child
+        
+        return candidates[0][0] if candidates else None
+    
+    def greedy_search(self):
+        parent_state = []
+        
+        while len(parent_state) < self.num_vertices:
+            children_states = self.children(parent_state)
+            
+            if not children_states:
+                break
+                
+            chosen_node = self.choose_node(parent_state, children_states)
+            parent_state.append(chosen_node)
+        
+        return parent_state
+    
+    def calculate_cost(self, route):
+        if not route:
+            return float('inf')
+        
+        cost = self.distance[0][route[0]]
+        for i in range(len(route) - 1):
+            cost += self.distance[route[i]][route[i + 1]]
+        cost += self.distance[route[-1]][0]
+        
+        return cost
+
+
+class Local_Search_VRP:
+    def __init__(self, num_vertices, capacity, distance):
+        self.num_vertices = num_vertices
+        self.capacity = capacity
+        self.distance = distance
+        self.pickup = set(range(1, num_vertices // 2 + 1))
+        self.dropoff = set(range(num_vertices // 2 + 1, num_vertices + 1))
+        self.iterations = 0  
+    
+    def calculate_cost(self, route):
+        if not route:
+            return float('inf')
+        
+        cost = self.distance[0][route[0]]
+        for i in range(len(route) - 1):
+            cost += self.distance[route[i]][route[i + 1]]
+        cost += self.distance[route[-1]][0]
+        
+        return cost
+    
+    def is_valid_route(self, route):
+        if len(route) != self.num_vertices:
+            return False
+        
+        current_capacity = 0
+        for location in route:
+            if location in self.pickup:
+                current_capacity += 1
+                if current_capacity > self.capacity:
+                    return False
+            else:
+                current_capacity -= 1
+        
+        visited_pickups = set()
+        for location in route:
+            if location in self.pickup:
+                visited_pickups.add(location)
+            else: 
+                corresponding_pickup = location - self.num_vertices // 2
+                if corresponding_pickup not in visited_pickups:
+                    return False
+        
         return True
     
-    def compute_path(self, config):
-        if self.check_capacity(config) == False:
-            return 1e9
-        else:
-            cost = 0
-            explore = list()
-            for city in range(len(config)-1):
-                explore.append(config[city+1])
-                cost += self.distance_matrix[config[city]][config[city+1]]
-                if config[city+1] > self.num_passengers:
-                    if config[city+1] - self.num_passengers not in explore:
-                        return 1e9
-            return cost
-    
-    def initialize_configuration(self):
-        init_config = np.arange(1, self.num_vertices)
-        np.random.shuffle(init_config)
-        init_c = init_config.tolist()
-        init_c.insert(0, 0)
-        init_c.append(0)
-        self.explored_set = init_c
-        return init_c
-    
-    def swap_positions(self, lis, pos1, pos2):
-        lis[pos1], lis[pos2] = lis[pos2], lis[pos1]
-        return lis
-    
-    def compute_capacity(self, configuration):
-        capp = 0
-        for conf in configuration:
-            if conf != 0:
-                if conf > self.num_passengers:
-                    capp -= 1
-                else:
-                    capp += 1
-        return capp
-    
-    def satisfied_configuration(self, config):
-        check_list = [[0,0] for j in range(self.num_passengers)]
-        new_config = copy.deepcopy(config)
+    def swap(self, route):
+        neighbors = []
+        n = len(route)
         
-        for city in range(1,len(config)-1):
-            city_id = config[city]
-            if city_id > self.num_passengers:
-                check_list[city_id - self.num_passengers-1][1] = city
-            else:
-                check_list[city_id-1][0] = city
+        for i in range(n):
+            for j in range(i + 1, n):
+                new_route = route.copy()
+                new_route[i], new_route[j] = new_route[j], new_route[i]
+                
+                if self.is_valid_route(new_route):
+                    neighbors.append(new_route)
+        
+        return neighbors
+    
+    def relocate(self, route):
+        neighbors = []
+        n = len(route)
+        
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    continue
+                
+                new_route = route.copy()
+                customer = new_route.pop(i)
+                new_route.insert(j, customer)
+                
+                if self.is_valid_route(new_route):
+                    neighbors.append(new_route)
+        
+        return neighbors
+    
+    def two_opt(self, route):
+        neighbors = []
+        n = len(route)
+        
+        for i in range(n - 1):
+            for j in range(i + 2, n + 1):
+                new_route = route[:i] + route[i:j][::-1] + route[j:]
+                
+                if self.is_valid_route(new_route):
+                    neighbors.append(new_route)
+        
+        return neighbors
+    
+    def variable_neighborhood_descent(self, initial_route, max_no_improve=10, max_time=280):
+        
+        self.iterations = 0
 
-        for location in check_list:
-            if location[0] > location[1]: # swap
-                new_config = self.swap_positions(new_config, location[0], location[1])
-        return new_config
-    
-    def get_neighbours(self, init_config):
-        neighbours = []
-        for i in range(1,len(init_config)-1):
-            for j in range(i + 1, len(init_config)-1):
-                neighbour = init_config.copy()
-                neighbour[i] = init_config[j]
-                neighbour[j] = init_config[i]
-                neighbour = self.satisfied_configuration(neighbour)
-                if self.check_capacity(neighbour) == True:
-                    neighbours.append(neighbour)
-        return neighbours
-    
-    def Hill_Climbing(self, max_iter=10):
-        init_state = self.generate_valid_state()
-        neighbours = self.get_neighbours(init_state)
-        best_cost = 1e9
-        best_neighbour = init_state
-        i = 0
-        while i < max_iter:
-            i += 1
-            prev_cost = best_cost
-            neighbours = self.get_neighbours(best_neighbour)
-            for neighbour in neighbours:
-                current_cost = self.compute_path(neighbour)
-                if current_cost < best_cost:
-                    best_cost = current_cost
-                    best_neighbour = neighbour
-                    
-            if prev_cost == best_cost and best_cost < 1e9:
+        current_route = initial_route.copy()
+        current_cost = self.calculate_cost(current_route)
+
+        iterations_without_improvement = 0
+        start_time = time.time()
+
+        neighborhoods = [
+            ("swap", self.swap),
+            ("relocate", self.relocate),
+            ("two_opt", self.two_opt),
+        ]
+
+        while iterations_without_improvement < max_no_improve:
+            if time.time() - start_time > max_time:
                 break
-        
-        return best_cost, best_neighbour
-    
-    def Metaheuristic_Hill_Climbing(self, num_play=2, max_iter=10):
-        sub_opt_cost = 1e9
-        sub_opt_config = list()
-        while sub_opt_cost >= 1e9:
-            for play in range(num_play):
-                cost, config = self.Hill_Climbing(max_iter)
-                if cost < sub_opt_cost:
-                    sub_opt_cost = cost
-                    sub_opt_config = config
-            
-        return sub_opt_cost, sub_opt_config
-    
-    
-    def generate_valid_state(self):
-        state = [0]
-        list_node = [i for i in range(1, self.num_vertices)]
-        current_seat = 0
-        def children(node, list_node, current_seat):
-            res = list()
-            for n in list_node:
-                if n not in state:
-                    if current_seat == self.capacity:
-                        if n > self.num_passengers:
-                            if n - self.num_passengers in state:
-                                res.append(n)
-                    else:
-                        if n > self.num_passengers:
-                            if n - self.num_passengers in state:
-                                res.append(n)
-                            else:
-                                continue
-                        else:
-                            res.append(n)
-            return res
-        while len(children(state[-1], list_node, current_seat)) != 0:
-            list_next_cities = children(state[-1], list_node, current_seat)
-#             print(f"Current city: {state[-1]}, list next possible cities: {list_next_cities}")
-            next_city = np.random.choice(list_next_cities, 1)[0]
-            if next_city > self.num_passengers:
-                current_seat -= 1
+
+            improved = False
+
+            for _name, op in neighborhoods:
+                self.iterations += 1
+                neighbors = op(current_route)
+
+                best_neighbor = None
+                best_neighbor_cost = current_cost
+
+                for neighbor in neighbors:
+                    neighbor_cost = self.calculate_cost(neighbor)
+                    if neighbor_cost < best_neighbor_cost:
+                        best_neighbor = neighbor
+                        best_neighbor_cost = neighbor_cost
+
+                if best_neighbor is not None:
+                    current_route = best_neighbor
+                    current_cost = best_neighbor_cost
+                    improved = True
+                    break
+
+            if improved:
+                iterations_without_improvement = 0
             else:
-                current_seat += 1
-            state.append(next_city)
-        state.append(0)
-        return state
+                iterations_without_improvement += 1
+
+        return current_route, current_cost
+
+
+def greedy_local_search(num_vertices, capacity, distance, return_iterations=False, verbose=False):
+
+    greedy = Greedy_Search(num_vertices, capacity, distance)
+    initial_solution = greedy.greedy_search()
+    
+    if len(initial_solution) != num_vertices:
+        return initial_solution, greedy.calculate_cost(initial_solution) if initial_solution else float('inf')
+    
+    local_search = Local_Search_VRP(num_vertices, capacity, distance)
+    final_solution, final_cost = local_search.variable_neighborhood_descent(initial_solution)
+
+    if verbose:
+        print(f"Iterations: {local_search.iterations}")
+
+    if return_iterations:
+        return final_solution, final_cost, local_search.iterations
+    return final_solution, final_cost
 
 
 def main():
-    
     import sys
     
     n, k = map(int, input().split())
-    num_vertices = 2 * n + 1
     
-    distance_matrix = []
-    for _ in range(num_vertices):
+    num_vertices = 2 * n
+    
+    distance = []
+    for _ in range(num_vertices + 1):
         row = list(map(int, input().split()))
-        distance_matrix.append(row)
+        distance.append(row)
     
     start_time = time.time()
     
-    graph = Graph_Hill_Climbing(num_vertices, distance_matrix, k)
-    cost, route = graph.Metaheuristic_Hill_Climbing(num_play=2, max_iter=10)
+    solution, cost, iterations = greedy_local_search(num_vertices, k, distance, return_iterations=True)
     
     end_time = time.time()
     execution_time = end_time - start_time
     
     print(n)
-    print(' '.join(map(str, route[1:-1])))
+    if solution and len(solution) == num_vertices:
+        print(' '.join(map(str, solution)))
+    else:
+        print("No solution found")
     
     print(f"Cost: {cost}", file=sys.stderr)
+    print(f"Iterations: {iterations}", file=sys.stderr)
     print(f"Execution time: {execution_time:.4f} seconds", file=sys.stderr)
 
 
