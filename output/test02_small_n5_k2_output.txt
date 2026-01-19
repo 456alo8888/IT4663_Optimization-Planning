@@ -3,18 +3,58 @@
 Test: test02_small_n5_k2
 n=5, k=2
 Method: sa
-  T0=2000.0, alpha=0.999, max_iter=5000, coef=1000.0
-Best cost: 223
+  T0=5000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 245
 Violations: 0
-Runtime: 0.02 seconds
-Route: 3 8 2 5 10 4 9 7 1 6
+Runtime: 0.04 seconds
+Route: 3 8 1 6 4 5 10 9 2 7
 
 ============================================================
 Test: test02_small_n5_k2
 n=5, k=2
 Method: ga
-  pop_size=1000, generations=5000, mutation_rate=0.2, max_no_improve=50, function_choice=1.0, coef=100000.0
+  pop_size=3000, generations=5000, mutation_rate=0.2, max_no_improve=50, function_choice=1.0, coef=1000000.0
 Best cost: 218
 Violations: 0
-Runtime: 3.62 seconds
+Runtime: 38.66 seconds
 Route: 1 6 5 10 4 9 2 7 3 8
+
+============================================================
+Test: test02_small_n5_k2
+n=5, k=2
+Method: sa
+  T0=5000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 223
+Violations: 0
+Runtime: 0.04 seconds
+Route: 3 8 2 5 10 4 9 7 1 6
+
+============================================================
+Test: test02_small_n5_k2
+n=5, k=2
+Method: sa
+  T0=50000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 240
+Violations: 0
+Runtime: 0.05 seconds
+Route: 1 6 2 7 4 5 10 9 3 8
+
+============================================================
+Test: test02_small_n5_k2
+n=5, k=2
+Method: ga
+  pop_size=5000, generations=5000, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 218
+Violations: 0
+Runtime: 2088.96 seconds
+Route: 1 6 5 10 4 9 2 7 3 8
+
+============================================================
+Test: test02_small_n5_k2
+n=5, k=2
+Method: sa
+  T0=50000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 223
+Violations: 0
+Runtime: 0.05 seconds
+Route: 3 8 2 5 10 4 9 7 1 6

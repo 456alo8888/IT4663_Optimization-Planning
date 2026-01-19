@@ -219,17 +219,18 @@ class CBUSSolver:
         
         # Initialize population
         population = []
-        population.append(self.naive_initialize())
+        # population.append(self.naive_initialize())
 
-        # population.append(self.greedy_initialize())
-        # population.append(self.nearest_neighbor_initialize())
+        population.append(self.greedy_initialize())
+        population.append(self.nearest_neighbor_initialize())
         
 
 
         
         while len(population) < pop_size:
             # route = self.greedy_initialize()
-            route = self.naive_initialize()
+            # route = self.naive_initialize()
+            route = self.nearest_neighbor_initialize()
             num_swaps = random.randint(10, 30)  # Fixed range for all sizes
             for _ in range(num_swaps):
                 route = self.swap_mutation(route)
@@ -321,7 +322,9 @@ class CBUSSolver:
         elif method == 'nearest':
             route = self.nearest_neighbor_initialize()
         elif method == 'sa':
-            initial = self.naive_initialize()
+            # initial = self.naive_initialize()
+            # initial = self.greedy_initialize()
+            initial = self.nearest_neighbor_initialize()
             route = self.simulated_annealing(
                 initial,
                 coef=kwargs.get('sa_coef', 100),
@@ -474,7 +477,7 @@ if __name__ == "__main__":
     parser.add_argument('--pop_size', type=int, default=100, help='GA population size')
     parser.add_argument('--generations', type=int, default=200, help='GA number of generations')
     parser.add_argument('--mutation_rate', type=float, default=0.2, help='GA mutation rate')
-    parser.add_argument('--max_no_improve', type=int, default=50, help='GA early stopping threshold')
+    parser.add_argument('--max_no_improve', type=int, default=1000, help='GA early stopping threshold')
     parser.add_argument('--function_choice', type=float, default=1, help='choose lose function for GA')
     parser.add_argument('--ga_coef', type=float, default=100, help='GA violation coefficient')
     

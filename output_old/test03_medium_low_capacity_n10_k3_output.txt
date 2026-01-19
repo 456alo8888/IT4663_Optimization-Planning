@@ -1,0 +1,20 @@
+
+============================================================
+Test: test03_medium_low_capacity_n10_k3
+n=10, k=3
+Method: sa
+  T0=2000.0, alpha=0.999, max_iter=5000, coef=1000.0
+Best cost: 565
+Violations: 0
+Runtime: 0.03 seconds
+Route: 9 19 10 20 4 7 17 14 1 11 6 16 3 13 5 15 8 18 2 12
+
+============================================================
+Test: test03_medium_low_capacity_n10_k3
+n=10, k=3
+Method: ga
+  pop_size=1000, generations=5000, mutation_rate=0.2, max_no_improve=50, function_choice=1.0, coef=100000.0
+Best cost: 411
+Violations: 0
+Runtime: 4.77 seconds
+Route: 9 19 10 20 3 13 6 16 1 11 4 14 5 15 8 18 2 12 7 17
