@@ -1,0 +1,130 @@
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: sa
+  T0=1000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 953
+Violations: 0
+Runtime: 14.16 seconds
+Route: 6 5 4 3 2 1 20 19 22 23 21 26 40 24 39 25 8 7 9 10 11 12 13 14 32 31 33 30 27 34 29 28 18 17 15 16 37 38 36 35
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: sa
+  T0=5000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 953
+Violations: 0
+Runtime: 15.96 seconds
+Route: 6 5 4 3 2 1 20 19 22 23 21 26 40 24 39 25 8 7 9 10 11 12 13 14 32 31 33 30 27 34 29 28 18 17 15 16 37 38 36 35
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=30, generations=50, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 977
+Violations: 0
+Runtime: 0.04 seconds
+Route: 2 1 20 19 18 17 16 15 21 37 38 40 35 36 39 22 14 13 12 11 10 9 8 7 33 30 27 31 32 29 28 34 4 3 5 6 25 24 26 23
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=30, generations=50, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 960
+Violations: 0
+Runtime: 0.07 seconds
+Route: 2 3 4 5 6 7 8 9 24 27 25 26 29 22 28 23 16 15 14 13 12 11 10 33 30 31 32 36 35 20 1 19 18 17 21 37 38 40 34 39
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=300, generations=50, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 958
+Violations: 0
+Runtime: 0.40 seconds
+Route: 2 1 20 19 18 17 21 37 38 40 39 3 4 5 6 7 8 9 24 27 25 26 29 22 28 23 16 15 14 13 12 11 10 33 30 31 32 36 35 34
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=300, generations=50, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 960
+Violations: 0
+Runtime: 0.70 seconds
+Route: 2 3 4 5 6 7 8 9 24 27 25 26 29 22 28 23 16 15 14 13 12 11 10 33 30 31 32 36 35 20 1 19 18 17 21 37 38 40 34 39
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=300, generations=50, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 960
+Violations: 0
+Runtime: 0.70 seconds
+Route: 2 3 4 5 6 7 8 9 24 27 25 26 29 22 28 23 16 15 14 13 12 11 10 33 30 31 32 36 35 20 1 19 18 17 21 37 38 40 34 39
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=10, generations=5, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 960
+Violations: 0
+Runtime: 0.03 seconds
+Route: 2 3 4 5 6 7 8 9 24 27 25 26 29 22 28 23 16 15 14 13 12 11 10 33 30 31 32 36 35 20 1 19 18 17 21 37 38 40 34 39
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=10, generations=5, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 960
+Violations: 0
+Runtime: 0.03 seconds
+Route: 2 3 4 5 6 7 8 9 24 27 25 26 29 22 28 23 16 15 14 13 12 11 10 33 30 31 32 36 35 20 1 19 18 17 21 37 38 40 34 39
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=10, generations=5, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 960
+Violations: 0
+Runtime: 0.03 seconds
+Route: 2 3 4 5 6 7 8 9 24 27 25 26 29 22 28 23 16 15 14 13 12 11 10 33 30 31 32 36 35 20 1 19 18 17 21 37 38 40 34 39
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=300, generations=5, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 960
+Violations: 0
+Runtime: 0.12 seconds
+Route: 2 3 4 5 6 7 8 9 24 27 25 26 29 22 28 23 16 15 14 13 12 11 10 33 30 31 32 36 35 20 1 19 18 17 21 37 38 40 34 39
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=300, generations=5, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 960
+Violations: 0
+Runtime: 0.11 seconds
+Route: 2 3 4 5 6 7 8 9 24 27 25 26 29 22 28 23 16 15 14 13 12 11 10 33 30 31 32 36 35 20 1 19 18 17 21 37 38 40 34 39
+
+============================================================
+Test: test24_star_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=1000, generations=500, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 946
+Violations: 0
+Runtime: 22.54 seconds
+Route: 2 3 4 5 6 7 9 8 27 24 26 29 22 28 23 16 15 14 13 12 11 10 33 30 31 32 35 34 1 20 19 18 17 21 37 38 40 39 25 36

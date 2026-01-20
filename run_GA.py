@@ -4,6 +4,8 @@ import math
 import time
 import argparse
 from copy import deepcopy
+import os
+import path 
 
 class CBUSSolver:
     def __init__(self, n, k, distance_matrix):
@@ -260,60 +262,125 @@ class CBUSSolver:
         return move_func(route)
     
     
-    def order_crossover(self, parent1, parent2):
-        """Order crossover (OX) preserving route structure"""
-        size = len(parent1)
-        start, end = sorted(random.sample(range(1, size - 1), 2))
+    
+    # def order_crossover(self, parent1, parent2):
+    #     """
+    #     Order Crossover (OX) - Standard implementation for TSP-like problems
+    #     Preserves relative order from parents while avoiding duplicates
+    #     """
+    #     size = len(parent1)
         
+    #     # Edge case: route too small
+    #     if size <= 3:
+    #         return parent1
+        
+    #     # Select two random crossover points (excluding depot at start and end)
+    #     point1, point2 = sorted(random.sample(range(1, size - 1), 2))
+        
+    #     # Initialize child with depot at start and end
+    #     child = [None] * size
+    #     child[0] = 0  # Depot
+    #     child[-1] = 0  # Depot
+        
+    #     # Step 1: Copy segment from parent1 to child
+    #     child[point1:point2] = parent1[point1:point2]
+        
+    #     # Step 2: Fill remaining positions from parent2 in order
+    #     # Start filling after point2, wrap around to point1
+    #     child_pos = point2
+    #     parent_pos = point2
+        
+    #     while None in child[1:-1]:  # Skip depots
+    #         # Wrap around if needed
+    #         if parent_pos >= size - 1:
+    #             parent_pos = 1
+    #         if child_pos >= size - 1:
+    #             child_pos = 1
+            
+    #         # Get next gene from parent2
+    #         gene = parent2[parent_pos]
+            
+    #         # If gene not already in child, add it
+    #         if gene not in child:
+    #             child[child_pos] = gene
+    #             child_pos += 1
+            
+    #         parent_pos += 1
+            
+    #         # Safety check: prevent infinite loop
+    #         if parent_pos - point2 > size:
+    #             break
+        
+    #     # Step 3: Final check - if still has None, fill with missing genes
+    #     if None in child[1:-1]:
+    #         all_genes = set(parent1[1:-1])
+    #         used_genes = set(g for g in child[1:-1] if g is not None)
+    #         missing_genes = list(all_genes - used_genes)
+            
+    #         for i in range(1, size - 1):
+    #             if child[i] is None and missing_genes:
+    #                 child[i] = missing_genes.pop(0)
+        
+    #     # Final validation
+    #     if None in child:
+    #         return parent1  # Fallback to parent1 if crossover failed
+        
+    #     # Return child if valid, otherwise return better parent
+    #     if self.is_valid_route(child):
+    #         return child
+    #     elif self.is_valid_route(parent1):
+    #         return parent1
+    #     else:
+    #         return parent2
+
+    def order_crossover(self, parent1, parent2):
+        size = len(parent1)
+        
+        # 1. Edge case
+        if size <= 3:
+            return parent1
+
+        # 2. Chọn điểm cắt (không lấy depot đầu [0] và cuối [-1])
+        # Random 2 điểm, đảm bảo a < b
+        a, b = sorted(random.sample(range(1, size - 1), 2))
+        
+        # 3. Khởi tạo child
         child = [None] * size
         child[0] = 0
         child[-1] = 0
-        child[start:end] = parent1[start:end]
         
-        fill_pos = end
-        for point in parent2[1:-1]:
-            if point not in child:
-                if fill_pos >= size - 1:
-                    fill_pos = 1
-                while child[fill_pos] is not None:
-                    fill_pos += 1
-                    if fill_pos >= size - 1:
-                        fill_pos = 1
-                child[fill_pos] = point
+        # 4. STEP 1: Copy đoạn gen từ Parent 1
+        # Slice này nằm từ a đến b-1
+        p1_segment = parent1[a:b]
+        child[a:b] = p1_segment
         
-        return child if self.is_valid_route(child) else parent1
+        # TẠO SET: Để kiểm tra tồn tại mất O(1) thay vì O(N) như code cũ
+        genes_in_child = set(p1_segment)
+        
+        # 5. STEP 2: Lấy gen từ Parent 2 theo đúng thứ tự xoay vòng
+        # Ta cần duyệt Parent 2 bắt đầu từ sau điểm b, vòng về đầu
+        # Thứ tự ưu tiên: [đoạn sau b] + [đoạn trước b] (bỏ qua depot)
+        # Ví dụ P2: [0, 1, 2, 3, 4, 5, 0], b=4 -> lấy đoạn index 4,5 rồi 1,2,3
+        p2_ordered = parent2[b:-1] + parent2[1:b]
+        
+        # Lọc những gen chưa có trong child (sử dụng Set lookup cực nhanh)
+        genes_to_fill = [gene for gene in p2_ordered if gene not in genes_in_child]
+        
+        # 6. STEP 3: Điền vào các chỗ trống trong Child
+        # Thứ tự điền cũng xoay vòng: điền từ b đến cuối, rồi quay lại từ đầu đến a
+        
+        # Số lượng chỗ trống ở phần đuôi (từ b đến sát depot cuối)
+        tail_slots = (size - 1) - b
+        
+        # Điền phần đuôi
+        child[b:-1] = genes_to_fill[:tail_slots]
+        
+        # Điền phần đầu (từ 1 đến a)
+        child[1:a] = genes_to_fill[tail_slots:]
+        
+        return child
+
     
-    # def simulated_annealing(self, initial_route, coef = 100, max_iter=5000, T0=1000, alpha=0.995):
-    
-    #     current = initial_route[:]
-    #     current_cost = self.calculate_route_cost(current)
-    #     current_violation = self.calculate_route_violation(current)
-    #     current_obj = current_cost + coef * current_violation
-    #     best = current[:]
-    #     best_obj = current_obj
-    #     T = T0
-        
-    #     for epoch in range(max_iter):
-    #         # Generate neighbor
-    #         print(f"{epoch}")
-    #         neighbor = self.get_neighbor(current)
-    #         neighbor_cost = self.calculate_route_cost(neighbor)
-    #         neighbor_violation = self.calculate_route_violation(neighbor)
-    #         neighbor_obj = neighbor_cost + coef * neighbor_violation
-    #         # Accept or reject
-    #         delta = neighbor_obj - current_obj
-    #         if delta < 0 or random.random() < math.exp(-delta / T):
-    #             current = neighbor
-    #             current_obj = neighbor_obj
-    #             if current_obj < best_obj:
-    #                 best = current[:]
-    #                 best_obj = current_obj
-            
-    #         T *= alpha
-    #         if T < 0.1:
-    #             break
-        
-    #     return best
 
     def simulated_annealing(self, initial_route, coef=100, max_iter=5000, T0=1000, alpha=0.995):
         """Simulated Annealing with adaptive coefficient and multiple neighborhood operators"""
@@ -454,6 +521,9 @@ class CBUSSolver:
     #     return 1.0 / cost
     
     def fitness_function_1(self, route , c = 10):
+        if route is None or None in route:
+            print("eeror")# ❌ Invalid route → worst fitness
+    
         """Fitness function considering cost and violations"""
         cost = self.calculate_route_cost(route)
         violations = self.calculate_route_violation(route)
@@ -471,12 +541,12 @@ class CBUSSolver:
                          max_no_improve=50, function_choice = 1 , coef = 100,  start_time=None):
         """Genetic Algorithm with early stopping"""
         # Adjust population size based on problem size
-        if self.n > 100:
-            pop_size = min(pop_size, 30)
+        # if self.n > 100:
+        #     pop_size = min(pop_size, 30)
         
         # Initialize population
         population = []
-        population.append(self.naive_initialize())
+        # population.append(self.naive_initialize())
 
         population.append(self.greedy_initialize())
         population.append(self.nearest_neighbor_initialize())
@@ -484,9 +554,9 @@ class CBUSSolver:
         from beam_search import Beam_Search_Graph
         beam = Beam_Search_Graph(2*self.n + 1 , self.dist, self.k)
         beam_sol = beam.beam_search_top_k(
-            beam_width= 5 ,
-            top_k = 5 ,
-            top_neighbors= 5
+            beam_width= 2,
+            top_k = 2 ,
+            top_neighbors= 2
         )
         if beam_sol:
             for sol in beam_sol:
@@ -509,7 +579,7 @@ class CBUSSolver:
             route = base_route[:]
             num_swaps = random.randint(10, 30)  # Fixed range for all sizes
             for _ in range(num_swaps):
-                route = self.get_neighbor(route, move_type=self.swap_mutation)
+                route = self.get_neighbor(route)
                 # route = self.swap_mutation(route)
             population.append(route)
 
@@ -523,6 +593,7 @@ class CBUSSolver:
     
         
         best_route = max(zip(population, fitness), key=lambda x: x[1])[0]
+        print("Initial best cost:", self.calculate_route_cost(best_route))
         best_cost = self.calculate_route_cost(best_route)
         no_improve_count = 0
         
@@ -546,7 +617,6 @@ class CBUSSolver:
             # Generate offspring
             offspring_count = 0
             max_offspring = pop_size * 2  # Limit offspring generation attempts
-            
             while len(new_population) < pop_size and offspring_count < max_offspring:
                 offspring_count += 1
                 # Tournament selection with smaller tournament size for large problems
@@ -567,14 +637,13 @@ class CBUSSolver:
                 new_population.append(child)
             
             population = new_population[:pop_size]  # Ensure correct size
-
             if function_choice == 1:
                 fitness = [self.fitness_function_1(r , c = coef) for r in population]
             else:
                 fitness = [self.fitness_function_2(r , c = coef) for r in population]
-            
             # Update best
             current_best = max(zip(population, fitness), key=lambda x: x[1])[0]
+
             current_cost = self.calculate_route_cost(current_best)
             if current_cost < best_cost:
                 best_route = current_best
@@ -619,7 +688,6 @@ class CBUSSolver:
                 coef = kwargs.get('ga_coef', 10),
                 start_time=start_time
             )
-            print("Returned from GA")
 
         end_time = time.time()
         runtime = end_time - start_time
@@ -763,38 +831,68 @@ if __name__ == "__main__":
     parser.add_argument('--sa_alpha', type=float, default=0.995, help='SA cooling rate')
     parser.add_argument('--sa_max_iter', type=int, default=5000, help='SA max iterations')
     parser.add_argument('--sa_coef', type=float, default=100, help='SA violation coefficient')
+    parser.add_argument('--folder_input', default = None, type=str, help='Input file path')
     
     
     args = parser.parse_args()
     
-    if args.input:
-        input_file = args.input
-        test_name = os.path.splitext(os.path.basename(input_file))[0]
-        
-        # Create output directory if it doesn't exist
+    if args.folder_input:
+        input_folder = args.folder_input
         output_dir = os.path.join(os.path.dirname(__file__), 'output')
         os.makedirs(output_dir, exist_ok=True)
-        
-        if args.output:
-            output_file = args.output
-        else:
-            output_file = os.path.join(output_dir, f"{test_name}_output.txt")
-        
-        # Prepare kwargs
-        kwargs = {
-            'pop_size': args.pop_size,
-            'generations': args.generations,
-            'mutation_rate': args.mutation_rate,
-            'max_no_improve': args.max_no_improve,
-            'sa_T0': args.sa_T0,
-            'sa_alpha': args.sa_alpha,
-            'sa_max_iter': args.sa_max_iter,
-            'sa_coef': args.sa_coef,
-            'function_choice': args.function_choice,
-            'ga_coef': args.ga_coef
-        }
-        
-        best_route, best_cost = solve_from_file(input_file, output_file, method=args.method, **kwargs)
-        print(f"\nBest cost: {best_cost}")
-    else:    
-        main()
+
+        for filename in os.listdir(input_folder):
+            if filename.endswith('.txt'):
+                input_file = os.path.join(input_folder, filename)
+                test_name = os.path.splitext(os.path.basename(input_file))[0]
+                output_file = os.path.join(output_dir, f"{test_name}_output.txt")
+                
+                # Prepare kwargs
+                kwargs = {
+                    'pop_size': args.pop_size,
+                    'generations': args.generations,
+                    'mutation_rate': args.mutation_rate,
+                    'max_no_improve': args.max_no_improve,
+                    'sa_T0': args.sa_T0,
+                    'sa_alpha': args.sa_alpha,
+                    'sa_max_iter': args.sa_max_iter,
+                    'sa_coef': args.sa_coef,
+                    'function_choice': args.function_choice,
+                    'ga_coef': args.ga_coef
+                }
+                
+                print(f"Solving {input_file}...")
+                best_route, best_cost = solve_from_file(input_file, output_file, method=args.method, **kwargs)
+                print(f"Best cost for {filename}: {best_cost}\n")
+    else:
+        if args.input:
+            input_file = args.input
+            test_name = os.path.splitext(os.path.basename(input_file))[0]
+            
+            # Create output directory if it doesn't exist
+            output_dir = os.path.join(os.path.dirname(__file__), 'output')
+            os.makedirs(output_dir, exist_ok=True)
+            
+            if args.output:
+                output_file = args.output
+            else:
+                output_file = os.path.join(output_dir, f"{test_name}_output.txt")
+            
+            # Prepare kwargs
+            kwargs = {
+                'pop_size': args.pop_size,
+                'generations': args.generations,
+                'mutation_rate': args.mutation_rate,
+                'max_no_improve': args.max_no_improve,
+                'sa_T0': args.sa_T0,
+                'sa_alpha': args.sa_alpha,
+                'sa_max_iter': args.sa_max_iter,
+                'sa_coef': args.sa_coef,
+                'function_choice': args.function_choice,
+                'ga_coef': args.ga_coef
+            }
+            
+            best_route, best_cost = solve_from_file(input_file, output_file, method=args.method, **kwargs)
+            print(f"\nBest cost: {best_cost}")
+        else:    
+            main()
