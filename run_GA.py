@@ -113,6 +113,151 @@ class CBUSSolver:
         if i != j:
             new_route[i], new_route[j] = new_route[j], new_route[i]
         return new_route
+
+
+    def two_opt_move(self, route):
+        """2-opt move: reverse a segment of the route"""
+        new_route = route[:]
+        i = random.randint(1, len(route) - 3)
+        j = random.randint(i + 1, len(route) - 2)
+        
+        # Reverse segment between i and j (inclusive)
+        new_route[i:j+1] = list(reversed(new_route[i:j+1]))
+        return new_route
+    
+    def insert_move(self, route):
+        """Insert move: remove a point and insert it elsewhere"""
+        new_route = route[:]
+        i = random.randint(1, len(route) - 2)
+        j = random.randint(1, len(route) - 2)
+        
+        if i != j:
+            point = new_route.pop(i)
+            new_route.insert(j, point)
+        return new_route
+    
+    def block_swap_move(self, route):
+        """Swap two consecutive blocks of random length"""
+        new_route = route[:]
+        size = len(route) - 2
+        
+        if size < 4:
+            return self.swap_mutation(route)
+        
+        # Select first block
+        block1_start = random.randint(1, size - 2)
+        block1_len = random.randint(1, min(3, size - block1_start))
+        block1_end = block1_start + block1_len
+        
+        # Select second block (non-overlapping)
+        remaining = list(range(1, block1_start)) + list(range(block1_end, size + 1))
+        if not remaining:
+            return self.swap_mutation(route)
+        
+        block2_start = random.choice(remaining)
+        block2_len = random.randint(1, min(3, size - block2_start + 1))
+        block2_end = min(block2_start + block2_len, size + 1)
+        
+        # Swap blocks
+        block1 = new_route[block1_start:block1_end]
+        block2 = new_route[block2_start:block2_end]
+        
+        if block1_start < block2_start:
+            new_route = (new_route[:block1_start] + block2 + 
+                        new_route[block1_end:block2_start] + block1 + 
+                        new_route[block2_end:])
+        else:
+            new_route = (new_route[:block2_start] + block1 + 
+                        new_route[block2_end:block1_start] + block2 + 
+                        new_route[block1_end:])
+        
+        return new_route
+    
+    def or_opt_move(self, route):
+        """Or-opt move: relocate a sequence of 1-3 consecutive points"""
+        new_route = route[:]
+        size = len(route) - 2
+        
+        if size < 2:
+            return route
+        
+        # Select sequence to move
+        seq_len = random.randint(1, min(3, size))
+        seq_start = random.randint(1, size - seq_len + 1)
+        seq_end = seq_start + seq_len
+        
+        # Select insertion position
+        insert_pos = random.randint(1, size + 1)
+        while seq_start <= insert_pos < seq_end:
+            insert_pos = random.randint(1, size + 1)
+        
+        # Extract sequence
+        sequence = new_route[seq_start:seq_end]
+        
+        # Remove sequence
+        new_route = new_route[:seq_start] + new_route[seq_end:]
+        
+        # Adjust insert position if needed
+        if insert_pos > seq_start:
+            insert_pos -= seq_len
+        
+        # Insert sequence at new position
+        new_route = new_route[:insert_pos] + sequence + new_route[insert_pos:]
+        
+        return new_route
+    
+    def three_opt_move(self, route):
+        """3-opt move: reconnect three segments"""
+        new_route = route[:]
+        size = len(route) - 2
+        
+        if size < 3:
+            return self.two_opt_move(route)
+        
+        # Select three cut points
+        cuts = sorted(random.sample(range(1, size + 1), 3))
+        i, j, k = cuts[0], cuts[1], cuts[2]
+        
+        # Randomly choose one of the reconnection options
+        option = random.randint(0, 3)
+        
+        if option == 0:
+            # Reverse middle segment
+            new_route[i:j] = list(reversed(new_route[i:j]))
+        elif option == 1:
+            # Reverse last segment
+            new_route[j:k] = list(reversed(new_route[j:k]))
+        elif option == 2:
+            # Swap middle and last segments
+            new_route = new_route[:i] + new_route[j:k] + new_route[i:j] + new_route[k:]
+        else:
+            # Reverse and swap
+            new_route = (new_route[:i] + list(reversed(new_route[j:k])) + 
+                        new_route[i:j] + new_route[k:])
+        
+        return new_route
+    
+    def get_neighbor(self, route, move_type=None):
+        """Generate neighbor using specified or random move type"""
+        if move_type is None:
+            # Random selection with weights
+            moves = [
+                (self.swap_mutation, 0.2),
+                (self.two_opt_move, 0.25),
+                (self.insert_move, 0.2),
+                (self.or_opt_move, 0.15),
+                (self.block_swap_move, 0.1),
+                (self.three_opt_move, 0.1)
+            ]
+            
+            move_func = random.choices(
+                [m[0] for m in moves],
+                weights=[m[1] for m in moves]
+            )[0]
+        else:
+            move_func = move_type
+        
+        return move_func(route)
     
     
     def order_crossover(self, parent1, parent2):
@@ -138,34 +283,146 @@ class CBUSSolver:
         
         return child if self.is_valid_route(child) else parent1
     
-    def simulated_annealing(self, initial_route, coef = 100, max_iter=5000, T0=1000, alpha=0.995):
-        """Simulated Annealing"""
-        current = initial_route[:]
+    # def simulated_annealing(self, initial_route, coef = 100, max_iter=5000, T0=1000, alpha=0.995):
+    
+    #     current = initial_route[:]
+    #     current_cost = self.calculate_route_cost(current)
+    #     current_violation = self.calculate_route_violation(current)
+    #     current_obj = current_cost + coef * current_violation
+    #     best = current[:]
+    #     best_obj = current_obj
+    #     T = T0
+        
+    #     for epoch in range(max_iter):
+    #         # Generate neighbor
+    #         print(f"{epoch}")
+    #         neighbor = self.get_neighbor(current)
+    #         neighbor_cost = self.calculate_route_cost(neighbor)
+    #         neighbor_violation = self.calculate_route_violation(neighbor)
+    #         neighbor_obj = neighbor_cost + coef * neighbor_violation
+    #         # Accept or reject
+    #         delta = neighbor_obj - current_obj
+    #         if delta < 0 or random.random() < math.exp(-delta / T):
+    #             current = neighbor
+    #             current_obj = neighbor_obj
+    #             if current_obj < best_obj:
+    #                 best = current[:]
+    #                 best_obj = current_obj
+            
+    #         T *= alpha
+    #         if T < 0.1:
+    #             break
+        
+    #     return best
+
+    def simulated_annealing(self, initial_route, coef=100, max_iter=5000, T0=1000, alpha=0.995):
+        """Simulated Annealing with adaptive coefficient and multiple neighborhood operators"""
+        # current = initial_route[:]
+        
+        
+
+        from beam_search import Beam_Search_Graph
+        beam = Beam_Search_Graph(2*self.n + 1 , self.dist, self.k)
+        beam_sol = beam.beam_search_top_k(
+            beam_width= 3 , 
+            top_k = 3 , 
+            top_neighbors= 3
+        )
+
+
+
+        if beam_sol:
+            current = beam_sol[0][1]
+        else:
+            current = initial_route[:]
+
+        # Adaptive coefficient: start low, increase gradually
+        coef_start = coef * 0.00001  # Start with 10% of target coefficient
+        coef_end = coef
+        coef_current = coef_start
+        
         current_cost = self.calculate_route_cost(current)
         current_violation = self.calculate_route_violation(current)
-        current_obj = current_cost + coef * current_violation
+        current_obj = current_cost + coef_current * current_violation
+        
         best = current[:]
         best_obj = current_obj
-        T = T0
+        best_cost = current_cost
+        best_violation = current_violation
         
-        for _ in range(max_iter):
-            # Generate neighbor
-            neighbor = self.swap_mutation(current)
+        T = T0
+        no_improve = 0
+        accepted = 0
+
+        
+        for iteration in range(max_iter):
+            # Adaptive coefficient: linear or exponential increase
+            # Linear increase
+            coef_current = coef_start + (coef_end - coef_start) * (iteration / max_iter)
+            
+            # Or exponential increase (uncomment to use)
+            # progress = iteration / max_iter
+            # coef_current = coef_start * ((coef_end / coef_start) ** progress)
+            
+            # Generate neighbor using random move
+            neighbor = self.get_neighbor(current)
+            
             neighbor_cost = self.calculate_route_cost(neighbor)
             neighbor_violation = self.calculate_route_violation(neighbor)
-            neighbor_obj = neighbor_cost + coef * neighbor_violation
+            neighbor_obj = neighbor_cost + coef_current * neighbor_violation
+            
+            # Recalculate current objective with updated coefficient
+            current_obj = current_cost + coef_current * current_violation
+            
             # Accept or reject
             delta = neighbor_obj - current_obj
             if delta < 0 or random.random() < math.exp(-delta / T):
                 current = neighbor
+                current_cost = neighbor_cost
+                current_violation = neighbor_violation
                 current_obj = neighbor_obj
-                if current_obj < best_obj:
-                    best = current[:]
-                    best_obj = current_obj
+                accepted += 1
+                
+                # Update best (using final coefficient for fair comparison)
+                best_obj_eval = neighbor_cost + coef_end * neighbor_violation
+                best_obj_current = best_cost + coef_end * best_violation
+                
+                if best_obj_eval < best_obj_current:
+                    best = neighbor[:]
+                    best_cost = neighbor_cost
+                    best_violation = neighbor_violation
+                    best_obj = best_obj_eval
+                    no_improve = 0
+                    # print(f"Iter {iteration}: New best = {best_cost}, "
+                        #   f"violations = {best_violation}, coef = {coef_current:.2f}")
+                else:
+                    no_improve += 1
+            else:
+                no_improve += 1
             
+            # Cooling
             T *= alpha
-            if T < 0.1:
+            
+            # Reheating if stuck (with increased coefficient awareness)
+            if no_improve > 500:
+                T = T0 * 0.3
+                no_improve = 0
+                # Optionally: increase coefficient faster when stuck
+                coef_current = min(coef_current * 1.5, coef_end)
+                # print(f"Iter {iteration}: Reheating to T={T:.2f}, coef={coef_current:.2f}")
+            
+            # Early stopping
+            if T < 0.01 or no_improve > 1000:
+                print(f"Early stop at iteration {iteration}")
                 break
+            
+            # Progress report every 500 iterations
+            if iteration % 500 == 0:
+                accept_rate = accepted / (iteration + 1)
+                # print(f"Iter {iteration}: T={T:.2f}, coef={coef_current:.2f}, "
+                #       f"Best={best_cost} (v={best_violation}), "
+                #       f"Current={current_cost} (v={current_violation}), "
+                #       f"Accept rate={accept_rate:.3f}")
         
         return best
     
@@ -219,10 +476,26 @@ class CBUSSolver:
         
         # Initialize population
         population = []
-        # population.append(self.naive_initialize())
+        population.append(self.naive_initialize())
 
         population.append(self.greedy_initialize())
         population.append(self.nearest_neighbor_initialize())
+
+        from beam_search import Beam_Search_Graph
+        beam = Beam_Search_Graph(2*self.n + 1 , self.dist, self.k)
+        beam_sol = beam.beam_search_top_k(
+            beam_width= 5 ,
+            top_k = 5 ,
+            top_neighbors= 5
+        )
+        if beam_sol:
+            for sol in beam_sol:
+                population.append(sol[1])
+                if len(population) >= pop_size:
+                    break
+        
+
+                            
         
 
 
@@ -230,10 +503,14 @@ class CBUSSolver:
         while len(population) < pop_size:
             # route = self.greedy_initialize()
             # route = self.naive_initialize()
-            route = self.nearest_neighbor_initialize()
+            # route = self.nearest_neighbor_initialize()
+            # pick random from existing and mutate
+            base_route = random.choice(population)
+            route = base_route[:]
             num_swaps = random.randint(10, 30)  # Fixed range for all sizes
             for _ in range(num_swaps):
-                route = self.swap_mutation(route)
+                route = self.get_neighbor(route, move_type=self.swap_mutation)
+                # route = self.swap_mutation(route)
             population.append(route)
 
         

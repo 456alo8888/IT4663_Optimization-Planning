@@ -68,3 +68,13 @@ Best cost: 37
 Violations: 0
 Runtime: 1980.56 seconds
 Route: 5 4 3 9 10 1 8 2 6 7
+
+============================================================
+Test: test2
+n=5, k=3
+Method: sa
+  T0=50000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 38
+Violations: 0
+Runtime: 11.43 seconds
+Route: 5 3 4 9 10 1 2 8 6 7
