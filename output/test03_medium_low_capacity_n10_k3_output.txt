@@ -1,0 +1,50 @@
+
+============================================================
+Test: test03_medium_low_capacity_n10_k3
+n=10, k=3
+Method: sa
+  T0=5000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 564
+Violations: 0
+Runtime: 0.04 seconds
+Route: 1 6 16 11 8 2 12 18 7 17 9 10 3 13 20 5 15 4 14 19
+
+============================================================
+Test: test03_medium_low_capacity_n10_k3
+n=10, k=3
+Method: ga
+  pop_size=3000, generations=5000, mutation_rate=0.2, max_no_improve=50, function_choice=1.0, coef=1000000.0
+Best cost: 426
+Violations: 0
+Runtime: 85.07 seconds
+Route: 7 17 8 18 2 12 5 15 1 11 6 16 3 13 9 19 10 20 4 14
+
+============================================================
+Test: test03_medium_low_capacity_n10_k3
+n=10, k=3
+Method: sa
+  T0=5000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 447
+Violations: 0
+Runtime: 0.06 seconds
+Route: 4 14 5 15 1 11 6 16 3 13 10 20 9 19 8 18 2 12 7 17
+
+============================================================
+Test: test03_medium_low_capacity_n10_k3
+n=10, k=3
+Method: sa
+  T0=50000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 447
+Violations: 0
+Runtime: 0.07 seconds
+Route: 4 14 5 15 1 11 6 16 3 13 10 20 9 19 8 18 2 12 7 17
+
+============================================================
+Test: test03_medium_low_capacity_n10_k3
+n=10, k=3
+Method: sa
+  T0=50000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 447
+Violations: 0
+Runtime: 0.05 seconds
+Route: 4 14 5 15 1 11 6 16 3 13 10 20 9 19 8 18 2 12 7 17

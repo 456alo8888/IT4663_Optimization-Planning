@@ -1,0 +1,110 @@
+
+============================================================
+Test: test12_greedy_trap_medium_n20_k8
+n=20, k=8
+Method: sa
+  T0=1000.0, alpha=0.999, max_iter=500000, coef=1000000.0
+Best cost: 276
+Violations: 0
+Runtime: 16.14 seconds
+Route: 3 4 23 24 5 25 6 26 7 27 8 28 9 29 10 30 11 31 12 13 32 33 14 15 34 16 35 17 36 18 37 19 38 20 39 1 40 2 21 22
+
+============================================================
+Test: test12_greedy_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=30, generations=50, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 275
+Violations: 0
+Runtime: 0.04 seconds
+Route: 12 13 32 33 14 15 34 16 35 17 36 18 37 19 38 20 39 40 1 2 21 3 22 23 4 5 24 25 6 26 7 27 8 28 9 29 10 30 11 31
+
+============================================================
+Test: test12_greedy_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=30, generations=50, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 271
+Violations: 0
+Runtime: 0.07 seconds
+Route: 12 32 13 14 33 15 34 16 35 17 36 18 37 19 38 20 39 1 40 2 21 3 22 23 4 24 5 25 6 26 7 27 8 28 9 29 10 30 11 31
+
+============================================================
+Test: test12_greedy_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=300, generations=50, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 270
+Violations: 0
+Runtime: 0.41 seconds
+Route: 14 15 34 16 35 17 36 18 37 19 38 20 39 1 40 2 21 3 22 23 4 24 5 25 6 26 7 27 8 28 9 29 10 30 11 31 12 13 32 33
+
+============================================================
+Test: test12_greedy_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=300, generations=50, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 270
+Violations: 0
+Runtime: 0.48 seconds
+Route: 14 15 34 16 35 17 36 18 37 19 38 20 39 1 40 2 21 3 22 23 4 24 5 25 6 26 7 27 8 28 9 29 10 30 11 31 12 13 32 33
+
+============================================================
+Test: test12_greedy_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=300, generations=50, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 270
+Violations: 0
+Runtime: 0.47 seconds
+Route: 14 15 34 16 35 17 36 18 37 19 38 20 39 1 40 2 21 3 22 23 4 24 5 25 6 26 7 27 8 28 9 29 10 30 11 31 12 13 32 33
+
+============================================================
+Test: test12_greedy_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=10, generations=5, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 277
+Violations: 0
+Runtime: 0.03 seconds
+Route: 2 3 22 23 4 24 5 25 6 26 7 27 8 28 9 29 10 30 11 31 12 13 32 33 14 15 34 16 35 17 36 18 37 19 38 20 39 1 40 21
+
+============================================================
+Test: test12_greedy_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=10, generations=5, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 277
+Violations: 0
+Runtime: 0.03 seconds
+Route: 2 3 22 23 4 24 5 25 6 26 7 27 8 28 9 29 10 30 11 31 12 13 32 33 14 15 34 16 35 17 36 18 37 19 38 20 39 1 40 21
+
+============================================================
+Test: test12_greedy_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=300, generations=5, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 277
+Violations: 0
+Runtime: 0.12 seconds
+Route: 2 3 22 23 4 24 5 25 6 26 7 27 8 28 9 29 10 30 11 31 12 13 32 33 14 15 34 16 35 17 36 18 37 19 38 20 39 1 40 21
+
+============================================================
+Test: test12_greedy_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=300, generations=5, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 277
+Violations: 0
+Runtime: 0.11 seconds
+Route: 2 3 22 23 4 24 5 25 6 26 7 27 8 28 9 29 10 30 11 31 12 13 32 33 14 15 34 16 35 17 36 18 37 19 38 20 39 1 40 21
+
+============================================================
+Test: test12_greedy_trap_medium_n20_k8
+n=20, k=8
+Method: ga
+  pop_size=1000, generations=500, mutation_rate=0.2, max_no_improve=1000, function_choice=1.0, coef=1000000.0
+Best cost: 274
+Violations: 0
+Runtime: 22.91 seconds
+Route: 7 27 8 28 9 29 10 30 11 31 12 13 32 33 14 15 34 16 35 17 36 18 37 19 38 20 39 1 40 2 21 3 22 23 4 24 5 25 6 26
