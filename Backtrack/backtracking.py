@@ -1,3 +1,5 @@
+"""Backtrack for Capacitated Pickup and Delivery Problem."""
+
 import heapq
 import time
 
@@ -171,19 +173,9 @@ class CBUSSolver:
 
 
 if __name__ == "__main__":
-    mode = 4
-    try:
-        line1 = input().strip().split()
-        if not line1:
-            exit()
-        n_customer = int(line1[0])
-        capacity = int(line1[1])
-
-        dist_matrix = []
-        for i in range(2 * n_customer + 1):
-            row = list(map(float, input().strip().split()))
-            dist_matrix.append(row)
-    except (EOFError, ValueError):
-        exit()
-
-    hustack(dist_matrix, n_customer, capacity, mode)
+    n_customers, capacity = map(int, input().split())
+    dist_matrix = []
+    for _ in range(2 * n_customers + 1):
+        row = list(map(int, input().split()))
+        dist_matrix.append(row)
+    hustack(dist_matrix, n_customers, capacity, mode=0)
