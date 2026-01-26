@@ -1,4 +1,4 @@
-"""Backtrack for Capacitated Pickup and Delivery Problem."""
+"""Branch and Bound with Style Bound for Capacitated Pickup and Delivery Problem."""
 
 import heapq
 import time
@@ -178,4 +178,4 @@ if __name__ == "__main__":
     for _ in range(2 * n_customers + 1):
         row = list(map(int, input().split()))
         dist_matrix.append(row)
-    hustack(dist_matrix, n_customers, capacity, mode=1)
+    hustack(dist_matrix, n_customers, capacity, mode=3)
