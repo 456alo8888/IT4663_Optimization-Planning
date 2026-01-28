@@ -5,7 +5,6 @@ import numpy as np
 from collections import defaultdict
 import time
 from collections import deque
-
 class Greedy_Search_Graph():
     def __init__(self, num_vertices, distance_matrix, capacity):
         self.num_vertices = num_vertices
@@ -131,30 +130,59 @@ class Greedy_Search_Graph():
 
 
 def main():
-    
+    import argparse
     import sys
-    
-    n, k = map(int, input().split())
-    num_vertices = 2 * n + 1
-    
-    distance_matrix = []
-    for _ in range(num_vertices):
-        row = list(map(int, input().split()))
-        distance_matrix.append(row)
-    
-    start_time = time.time()
-    
-    graph = Greedy_Search_Graph(num_vertices, distance_matrix, k)
-    cost, route = graph.greedy_search()
-    
-    end_time = time.time()
-    execution_time = end_time - start_time
-    
-    print(n)
-    print(' '.join(map(str, route[1:-1])))
-    
-    print(f"Cost: {cost}", file=sys.stderr)
-    print(f"Execution time: {execution_time:.4f} seconds", file=sys.stderr)
+
+    parser = argparse.ArgumentParser(description="Greedy solver for pickup-and-delivery VRP")
+    parser.add_argument("--input", "-i", help="Path to input test file (.txt). If omitted, read from stdin.")
+    parser.add_argument("--output", "-o", help="Write primary output (stdout) to this file.")
+    parser.add_argument("--log", help="Write logs (stderr) to this file.")
+    args = parser.parse_args()
+
+    out_fp = open(args.output, "w", encoding="utf-8") if args.output else sys.stdout
+    err_fp = open(args.log, "w", encoding="utf-8") if args.log else sys.stderr
+
+    try:
+        if args.input:
+            in_fp = open(args.input, "r", encoding="utf-8")
+            old_stdin = sys.stdin
+            sys.stdin = in_fp
+        else:
+            in_fp = None
+            old_stdin = None
+
+        try:
+            n, k = map(int, input().split())
+            num_vertices = 2 * n + 1
+
+            distance_matrix = []
+            for _ in range(num_vertices):
+                row = list(map(int, input().split()))
+                distance_matrix.append(row)
+
+            start_time = time.time()
+
+            graph = Greedy_Search_Graph(num_vertices, distance_matrix, k)
+            cost, route = graph.greedy_search()
+
+            end_time = time.time()
+            execution_time = end_time - start_time
+
+            print(n, file=out_fp)
+            seq = route[1:-1] if route else []
+            print(' '.join(map(str, seq)), file=out_fp)
+
+            #print(f"Cost: {cost}", file=err_fp)
+            #print(f"Execution time: {execution_time:.4f} seconds", file=err_fp)
+        finally:
+            if in_fp is not None:
+                sys.stdin = old_stdin
+                in_fp.close()
+    finally:
+        if out_fp is not sys.stdout:
+            out_fp.close()
+        if err_fp is not sys.stderr:
+            err_fp.close()
 
 
 if __name__ == "__main__":
