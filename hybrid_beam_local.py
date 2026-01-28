@@ -89,11 +89,6 @@ class Beam_Search_Graph():
         return res
 
     def _greedy_rollout_extra_cost(self, state, last_node):
-        """Heuristic completion cost via greedy rollout.
-
-        Used only for ranking/pruning in beam search.
-        Returns a large number if greedy completion fails.
-        """
         if len(state) >= self.num_vertices:
             return self.distance_matrix[last_node][0]
 
@@ -120,21 +115,10 @@ class Beam_Search_Graph():
         top_neighbors=3,
         use_rollout_heuristic=True,
     ):
-        """Beam search returning the top-K best complete routes.
-
-        - Keeps only `beam_width` best partial states at each depth.
-        - Expands only the `top_neighbors` best (nearest) feasible children per state.
-        - Returns a list of (cost, route) sorted by cost (route includes depot 0 at both ends).
-        """
-
         beam_width = max(1, int(beam_width))
         top_k = max(1, int(top_k))
         top_neighbors = max(1, int(top_neighbors))
-
-        # frontier items: (score, cumulative_cost, last_node, state)
         frontier = [(0.0, 0.0, 0, [0])]
-
-        # keep best K complete solutions in a max-heap: (-cost, route)
         best_complete = []
         seen_complete = set()
 
@@ -157,8 +141,6 @@ class Beam_Search_Graph():
                 children = self.children(last_node, state)
                 if not children:
                     continue
-
-                # Expand only top-N nearest feasible neighbors (neighborhood)
                 children.sort(key=lambda c: self.distance_matrix[last_node][c])
                 for child in children[:top_neighbors]:
                     edge_cost = self.distance_matrix[last_node][child]
@@ -184,7 +166,6 @@ class Beam_Search_Graph():
         return results
         
     def beam_search(self, num_chosen_nodes=3):
-        """Backwards-compatible: return best (cost, route)."""
         results = self.beam_search_top_k(
             beam_width=num_chosen_nodes,
             top_k=1,
@@ -305,12 +286,6 @@ class Local_Search_VRP():
         max_time=280,
         verbose=False,
     ):
-        """Variable Neighborhood Descent (VND) with time/no-improve stopping.
-
-        This mirrors the stopping behavior used in hill_climbing.py: stop after
-        `max_no_improve` consecutive non-improving outer iterations or when `max_time`
-        seconds elapse (also capped by `max_iterations`).
-        """
         if initial_route is None:
             return 1e9, None, 0
 
@@ -337,7 +312,7 @@ class Local_Search_VRP():
                     new_route, new_cost, neighborhood_improved = self.swap(current_route)
                 elif neighborhood == 'relocate':
                     new_route, new_cost, neighborhood_improved = self.relocate(current_route)
-                else:  # two_opt
+                else:
                     new_route, new_cost, neighborhood_improved = self.two_opt(current_route)
 
                 if neighborhood_improved:
@@ -378,8 +353,6 @@ def hybrid_beam_local_search(
     ls_max_time=280,
     verbose=False,
 ):
-    
-    
     if verbose:
         print("="*60)
         print("PHASE 1: BEAM SEARCH (Constructive)")
@@ -387,17 +360,12 @@ def hybrid_beam_local_search(
     
     beam = Beam_Search_Graph(num_vertices, distance_matrix, capacity)
 
-    # Top-K beam solutions while expanding top-N nearest feasible neighbors.
     beam_solutions = beam.beam_search_top_k(
         beam_width=beam_width,
         top_k=beam_top_k,
         top_neighbors=beam_top_neighbors,
         use_rollout_heuristic=True,
     )
-
-    # Fallback: beam search might fail to produce a complete feasible route for
-    # some instances/beam widths. If so, keep the pipeline alive by using a simple
-    # deterministic feasible construction.
     if not beam_solutions:
         if verbose:
             print("\n! Beam search found no complete route; falling back to a simple construction")
@@ -418,8 +386,6 @@ def hybrid_beam_local_search(
 
         fallback_cost = Local_Search_VRP(num_vertices, distance_matrix, capacity).compute_path_cost(route)
         beam_solutions = [(fallback_cost, route)]
-
-    # Ensure we have unique initial routes
     unique_beam = []
     seen = set()
     for c, r in beam_solutions:
@@ -440,8 +406,6 @@ def hybrid_beam_local_search(
         print("="*60)
     
     ls = Local_Search_VRP(num_vertices, distance_matrix, capacity)
-
-    # Run local search from each beam-initialized route.
     ls_results = []
     for idx, (init_cost, init_route) in enumerate(beam_solutions, start=1):
         cost, route, iters = ls.variable_neighborhood_descent(
@@ -480,7 +444,6 @@ def hybrid_beam_local_search(
         for idx, r in enumerate(top_ls_results, start=1):
             print(f"  LS #{idx}: from Beam #{r['beam_rank']} -> cost={r['final_cost']} iters={r['ls_iterations']}")
 
-    # Backwards-friendly return: best solution + top3 lists
     best_beam_cost, best_beam_route = beam_solutions[0]
     return (
         final_cost,
@@ -494,91 +457,37 @@ def hybrid_beam_local_search(
 
 
 def main():
-    import argparse
-    import sys
+    n, k = map(int, input().split())
+    num_vertices = 2 * n + 1
 
-    parser = argparse.ArgumentParser(description="Hybrid beam-search + local-search solver")
-    parser.add_argument("--input", "-i", help="Path to input test file (.txt). If omitted, read from stdin.")
-    parser.add_argument("--output", "-o", help="Write primary output (stdout) to this file.")
-    parser.add_argument("--log", help="Write logs (stderr) to this file.")
-    parser.add_argument(
-        "--ls-max-time",
-        type=float,
-        default=3600.0,
-        help="Local search max time in seconds (default: 3600 = 60 minutes)",
+    distance_matrix = []
+    for _ in range(num_vertices):
+        distance_matrix.append(list(map(int, input().split())))
+
+    (
+        _final_cost,
+        final_route,
+        _beam_cost,
+        _beam_route,
+        _ls_iterations,
+        _beam_solutions,
+        _top_ls_results,
+    ) = hybrid_beam_local_search(
+        num_vertices=num_vertices,
+        distance_matrix=distance_matrix,
+        capacity=k,
+        beam_width=3,
+        beam_top_k=3,
+        beam_top_neighbors=3,
+        ls_max_time=3600,
+        ls_max_no_improve=10,
     )
-    args = parser.parse_args()
 
-    out_fp = open(args.output, "w", encoding="utf-8") if args.output else sys.stdout
-    err_fp = open(args.log, "w", encoding="utf-8") if args.log else sys.stderr
-
-    try:
-        if args.input:
-            in_fp = open(args.input, "r", encoding="utf-8")
-            old_stdin = sys.stdin
-            sys.stdin = in_fp
-        else:
-            in_fp = None
-            old_stdin = None
-
-        try:
-            n, k = map(int, input().split())
-            num_vertices = 2 * n + 1
-
-            distance_matrix = []
-            for _ in range(num_vertices):
-                row = list(map(int, input().split()))
-                distance_matrix.append(row)
-
-            start_time = time.time()
-
-            (
-                final_cost,
-                final_route,
-                beam_cost,
-                beam_route,
-                ls_iterations,
-                beam_solutions,
-                top_ls_results,
-            ) = hybrid_beam_local_search(
-                num_vertices=num_vertices,
-                distance_matrix=distance_matrix,
-                capacity=k,
-                beam_width=3,
-                beam_top_k=3,
-                beam_top_neighbors=3,
-                ls_max_time=args.ls_max_time,
-                ls_max_no_improve=10,
-            )
-
-            end_time = time.time()
-            execution_time = end_time - start_time
-
-            print(n, file=out_fp)
-            seq = final_route[1:-1] if final_route else []
-            print(' '.join(map(str, seq)), file=out_fp)
-
-            #print(f"Cost: {final_cost}", file=err_fp)
-            #print(f"Local search iterations: {ls_iterations}", file=err_fp)
-            #print(f"Execution time: {execution_time:.4f} seconds", file=err_fp)
-
-            # Extra debug info (stderr): top-3 beam + top-3 after local search
-            #for idx, (c, r) in enumerate(beam_solutions[:3], start=1):
-            #    print(f"Beam Top {idx} cost: {c}", file=err_fp)
-            #for idx, info in enumerate(top_ls_results[:3], start=1):
-            #    print(
-            #        f"LS Top {idx}: from Beam #{info['beam_rank']} cost={info['final_cost']} iters={info['ls_iterations']}",
-            #        file=err_fp,
-            #    )
-        finally:
-            if in_fp is not None:
-                sys.stdin = old_stdin
-                in_fp.close()
-    finally:
-        if out_fp is not sys.stdout:
-            out_fp.close()
-        if err_fp is not sys.stderr:
-            err_fp.close()
+    print(n)
+    if final_route:
+        print(' '.join(map(str, final_route[1:-1])))
+    else:
+        print('')
 
 
 if __name__ == "__main__":
