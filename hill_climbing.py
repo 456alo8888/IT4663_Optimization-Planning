@@ -224,53 +224,118 @@ class Local_Search_VRP:
         return current_route, current_cost
 
 
-def greedy_local_search(num_vertices, capacity, distance, return_iterations=False, verbose=False):
+def greedy_local_search(
+    num_vertices,
+    capacity,
+    distance,
+    ls_max_time=280,
+    return_iterations=False,
+    return_initial_cost=False,
+    verbose=False,
+):
 
     greedy = Greedy_Search(num_vertices, capacity, distance)
     initial_solution = greedy.greedy_search()
+    initial_cost = greedy.calculate_cost(initial_solution) if initial_solution else float('inf')
     
     if len(initial_solution) != num_vertices:
-        return initial_solution, greedy.calculate_cost(initial_solution) if initial_solution else float('inf')
+        if return_iterations and return_initial_cost:
+            return initial_solution, initial_cost, 0, initial_cost
+        if return_iterations:
+            return initial_solution, initial_cost, 0
+        if return_initial_cost:
+            return initial_solution, initial_cost, initial_cost
+        return initial_solution, initial_cost
     
     local_search = Local_Search_VRP(num_vertices, capacity, distance)
-    final_solution, final_cost = local_search.variable_neighborhood_descent(initial_solution)
+    final_solution, final_cost = local_search.variable_neighborhood_descent(
+        initial_solution,
+        max_time=ls_max_time,
+    )
 
     if verbose:
         print(f"Iterations: {local_search.iterations}")
 
     if return_iterations:
+        if return_initial_cost:
+            return final_solution, final_cost, local_search.iterations, initial_cost
         return final_solution, final_cost, local_search.iterations
+    if return_initial_cost:
+        return final_solution, final_cost, initial_cost
     return final_solution, final_cost
 
 
 def main():
+    import argparse
     import sys
-    
-    n, k = map(int, input().split())
-    
-    num_vertices = 2 * n
-    
-    distance = []
-    for _ in range(num_vertices + 1):
-        row = list(map(int, input().split()))
-        distance.append(row)
-    
-    start_time = time.time()
-    
-    solution, cost, iterations = greedy_local_search(num_vertices, k, distance, return_iterations=True)
-    
-    end_time = time.time()
-    execution_time = end_time - start_time
-    
-    print(n)
-    if solution and len(solution) == num_vertices:
-        print(' '.join(map(str, solution)))
-    else:
-        print("No solution found")
-    
-    print(f"Cost: {cost}", file=sys.stderr)
-    print(f"Iterations: {iterations}", file=sys.stderr)
-    print(f"Execution time: {execution_time:.4f} seconds", file=sys.stderr)
+
+    parser = argparse.ArgumentParser(description="Greedy + local search (hill climbing / VND) solver")
+    parser.add_argument("--input", "-i", help="Path to input test file (.txt). If omitted, read from stdin.")
+    parser.add_argument("--output", "-o", help="Write primary output (stdout) to this file.")
+    parser.add_argument("--log", help="Write logs (stderr) to this file.")
+    parser.add_argument(
+        "--ls-max-time",
+        type=float,
+        default=3600.0,
+        help="Local search max time in seconds (default: 3600 = 60 minutes)",
+    )
+    args = parser.parse_args()
+
+    out_fp = open(args.output, "w", encoding="utf-8") if args.output else sys.stdout
+    err_fp = open(args.log, "w", encoding="utf-8") if args.log else sys.stderr
+
+    try:
+        if args.input:
+            in_fp = open(args.input, "r", encoding="utf-8")
+            old_stdin = sys.stdin
+            sys.stdin = in_fp
+        else:
+            in_fp = None
+            old_stdin = None
+
+        try:
+            n, k = map(int, input().split())
+            num_vertices = 2 * n
+
+            distance = []
+            for _ in range(num_vertices + 1):
+                row = list(map(int, input().split()))
+                distance.append(row)
+
+            start_time = time.time()
+
+            solution, cost, iterations, initial_cost = greedy_local_search(
+                num_vertices,
+                k,
+                distance,
+                ls_max_time=args.ls_max_time,
+                return_iterations=True,
+                return_initial_cost=True,
+            )
+
+            end_time = time.time()
+            execution_time = end_time - start_time
+
+            print(n, file=out_fp)
+            if solution and len(solution) == num_vertices:
+                print(' '.join(map(str, solution)), file=out_fp)
+            else:
+                print('', file=out_fp)
+                print("Warning: no complete feasible route produced", file=err_fp)
+
+            #print(f"Cost: {cost}", file=err_fp)
+            #print(f"Initial cost: {initial_cost}", file=err_fp)
+            #print(f"Iterations: {iterations}", file=err_fp)
+            #print(f"Execution time: {execution_time:.4f} seconds", file=err_fp)
+        finally:
+            if in_fp is not None:
+                sys.stdin = old_stdin
+                in_fp.close()
+    finally:
+        if out_fp is not sys.stdout:
+            out_fp.close()
+        if err_fp is not sys.stderr:
+            err_fp.close()
 
 
 if __name__ == "__main__":
