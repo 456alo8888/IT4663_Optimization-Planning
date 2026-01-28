@@ -494,57 +494,91 @@ def hybrid_beam_local_search(
 
 
 def main():
-    import time
+    import argparse
     import sys
-    
-    # Read input
-    n, k = map(int, input().split())
-    num_vertices = 2 * n + 1
-    
-    distance_matrix = []
-    for _ in range(num_vertices):
-        row = list(map(int, input().split()))
-        distance_matrix.append(row)
-    
-    start_time = time.time()
-    
-    (
-        final_cost,
-        final_route,
-        beam_cost,
-        beam_route,
-        ls_iterations,
-        beam_solutions,
-        top_ls_results,
-    ) = hybrid_beam_local_search(
-        num_vertices=num_vertices,
-        distance_matrix=distance_matrix,
-        capacity=k,
-        beam_width=3,
-        beam_top_k=3,
-        beam_top_neighbors=3,
-        ls_max_time=280,
-        ls_max_no_improve=10
-    )
-    
-    end_time = time.time()
-    execution_time = end_time - start_time
-    
-    print(n)
-    print(' '.join(map(str, final_route[1:-1])))
-    
-    print(f"Cost: {final_cost}", file=sys.stderr)
-    print(f"Local search iterations: {ls_iterations}", file=sys.stderr)
-    print(f"Execution time: {execution_time:.4f} seconds", file=sys.stderr)
 
-    # Extra debug info (stderr): top-3 beam + top-3 after local search
-    for idx, (c, r) in enumerate(beam_solutions[:3], start=1):
-        print(f"Beam Top {idx} cost: {c}", file=sys.stderr)
-    for idx, info in enumerate(top_ls_results[:3], start=1):
-        print(
-            f"LS Top {idx}: from Beam #{info['beam_rank']} cost={info['final_cost']} iters={info['ls_iterations']}",
-            file=sys.stderr,
-        )
+    parser = argparse.ArgumentParser(description="Hybrid beam-search + local-search solver")
+    parser.add_argument("--input", "-i", help="Path to input test file (.txt). If omitted, read from stdin.")
+    parser.add_argument("--output", "-o", help="Write primary output (stdout) to this file.")
+    parser.add_argument("--log", help="Write logs (stderr) to this file.")
+    parser.add_argument(
+        "--ls-max-time",
+        type=float,
+        default=3600.0,
+        help="Local search max time in seconds (default: 3600 = 60 minutes)",
+    )
+    args = parser.parse_args()
+
+    out_fp = open(args.output, "w", encoding="utf-8") if args.output else sys.stdout
+    err_fp = open(args.log, "w", encoding="utf-8") if args.log else sys.stderr
+
+    try:
+        if args.input:
+            in_fp = open(args.input, "r", encoding="utf-8")
+            old_stdin = sys.stdin
+            sys.stdin = in_fp
+        else:
+            in_fp = None
+            old_stdin = None
+
+        try:
+            n, k = map(int, input().split())
+            num_vertices = 2 * n + 1
+
+            distance_matrix = []
+            for _ in range(num_vertices):
+                row = list(map(int, input().split()))
+                distance_matrix.append(row)
+
+            start_time = time.time()
+
+            (
+                final_cost,
+                final_route,
+                beam_cost,
+                beam_route,
+                ls_iterations,
+                beam_solutions,
+                top_ls_results,
+            ) = hybrid_beam_local_search(
+                num_vertices=num_vertices,
+                distance_matrix=distance_matrix,
+                capacity=k,
+                beam_width=3,
+                beam_top_k=3,
+                beam_top_neighbors=3,
+                ls_max_time=args.ls_max_time,
+                ls_max_no_improve=10,
+            )
+
+            end_time = time.time()
+            execution_time = end_time - start_time
+
+            print(n, file=out_fp)
+            seq = final_route[1:-1] if final_route else []
+            print(' '.join(map(str, seq)), file=out_fp)
+
+            #print(f"Cost: {final_cost}", file=err_fp)
+            #print(f"Local search iterations: {ls_iterations}", file=err_fp)
+            #print(f"Execution time: {execution_time:.4f} seconds", file=err_fp)
+
+            # Extra debug info (stderr): top-3 beam + top-3 after local search
+            #for idx, (c, r) in enumerate(beam_solutions[:3], start=1):
+            #    print(f"Beam Top {idx} cost: {c}", file=err_fp)
+            #for idx, info in enumerate(top_ls_results[:3], start=1):
+            #    print(
+            #        f"LS Top {idx}: from Beam #{info['beam_rank']} cost={info['final_cost']} iters={info['ls_iterations']}",
+            #        file=err_fp,
+            #    )
+        finally:
+            if in_fp is not None:
+                sys.stdin = old_stdin
+                in_fp.close()
+    finally:
+        if out_fp is not sys.stdout:
+            out_fp.close()
+        if err_fp is not sys.stderr:
+            err_fp.close()
 
 
 if __name__ == "__main__":
