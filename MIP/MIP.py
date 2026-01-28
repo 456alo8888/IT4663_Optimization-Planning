@@ -3,7 +3,7 @@ import sys
 import time
 sec_lst = []
 
-def MIP_solver(n: int, K: int, C: list[list[int]]):
+def MIP_solver(n, K, C):
     m = 2 * n + 1
 
     solver = pywraplp.Solver.CreateSolver("SCIP")
@@ -14,8 +14,7 @@ def MIP_solver(n: int, K: int, C: list[list[int]]):
             if i != j:
                 x[i,j] = solver.BoolVar("x(" + str(i) + str(j) + ")")
 
-    # Passenger flow f[p][i][j] in [0,1]
-    # p: 0..n-1, pickup = p+1, drop = p+n+1
+
     f = [[[solver.IntVar(0, 1, "f(" + str(p) + "," + str(i) + "," + str(j) + ")") for j in range(m)]
           for i in range(m)]
          for p in range(n)]
@@ -27,24 +26,20 @@ def MIP_solver(n: int, K: int, C: list[list[int]]):
                 if i != j:
                     solver.Add(f[p][i][j] <= x[i,j])
 
-    # TSP degree constraints
     for i in range(m):
         solver.Add(sum(x[i,j] for j in range(m) if j != i) == 1)
         solver.Add(sum(x[j,i] for j in range(m) if j != i) == 1)
 
-    # Capacity on arcs: sum passenger-flows on arc <= K if arc used
     for i in range(m):
         for j in range(m):
             if i != j:
                 solver.Add(sum(f[p][i][j] for p in range(n)) <= K * x[i,j])
 
-    # Forbid passenger flow entering/leaving depot (anchors precedence w.r.t. depot)
     for p in range(n):
         for v in range(1, m):
             solver.Add(f[p][0][v] == 0)
             solver.Add(f[p][v][0] == 0)
 
-    # Flow balance per passenger: +1 at pickup, -1 at drop, 0 elsewhere
     for p in range(n):
         pickup = p + 1
         drop = p + n + 1

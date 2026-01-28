@@ -1,7 +1,10 @@
 from ortools.sat.python import cp_model
+
+import sys
+sys.stderr = sys.stdout
 model = cp_model.CpModel()
 
-def CP_solver(n: int, K: int, C: list[list[int]]):
+def CP_solver(n, K, C):
     m = 2 * n + 1
     solver = cp_model.CpSolver()
     model = cp_model.CpModel()
@@ -19,7 +22,7 @@ def CP_solver(n: int, K: int, C: list[list[int]]):
         u[i] = model.NewIntVar(0, K, "load after leaving point " + str(i))
 
     for i in range(1, m):
-        index[i] = model.NewIntVar(1, m, "index visitting point " + str(i))
+        index[i] = model.NewIntVar(1, m - 1, "index visitting point " + str(i))
 
     model.AddAllDifferent([index[i] for i in range(1, m)])
     for i in range(m):
@@ -39,6 +42,7 @@ def CP_solver(n: int, K: int, C: list[list[int]]):
             if i != j:
                 model.Add(u[i] == u[j] + 1).OnlyEnforceIf(x[i,j])
 
+
     for i in range(1, n + 1):
         model.Add(x[i,0] == 0)
         model.Add(x[0,i + n] == 0)
@@ -50,6 +54,14 @@ def CP_solver(n: int, K: int, C: list[list[int]]):
         for j in range(1, m):
             if i != j:
                 model.Add(index[j] == index[i] + 1).OnlyEnforceIf(x[i,j])
+
+    for j in range(1, m):
+        model.Add(index[j] == 1).OnlyEnforceIf(x[0, j])
+
+    # last -> depot
+    for i in range(1, m):
+        model.Add(index[i] == m - 1).OnlyEnforceIf(x[i, 0])
+
     obj = sum(x[i,j] *  C[i][j] for i in range(m) for j in range(m) if i != j)
     model.Minimize(obj)
     
