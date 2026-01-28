@@ -1,7 +1,7 @@
 from ortools.sat.python import cp_model
 
 import sys
-sys.stderr = sys.stdout
+# sys.stderr = sys.stdout
 model = cp_model.CpModel()
 
 def CP_solver(n, K, C):
