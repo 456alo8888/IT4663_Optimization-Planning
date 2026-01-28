@@ -13,7 +13,7 @@ def CP_solver(n: int, K: int, C: list[list[int]]):
     for i in range(m):
         for j in range(m):
             if i != j:
-                x[i,j] = model.NewIntVar(0, 1, f"x{i}{j}")
+                x[i,j] = model.NewBoolVar(f"x{i}{j}")
     
     for i in range(1, m):
         u[i] = model.NewIntVar(0, K, "load after leaving point " + str(i))
@@ -49,7 +49,7 @@ def CP_solver(n: int, K: int, C: list[list[int]]):
     for i in range(1, m):
         for j in range(1, m):
             if i != j:
-                model.Add(index[j] == index[i] + 1 == 0).OnlyEnforceIf(x[i,j])
+                model.Add(index[j] == index[i] + 1).OnlyEnforceIf(x[i,j])
     obj = sum(x[i,j] *  C[i][j] for i in range(m) for j in range(m) if i != j)
     model.Minimize(obj)
     
