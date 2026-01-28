@@ -1,10 +1,4 @@
-
-import copy 
-import random
-import numpy as np
-from collections import defaultdict
-import time
-from collections import deque
+import copy
 class Greedy_Search_Graph():
     def __init__(self, num_vertices, distance_matrix, capacity):
         self.num_vertices = num_vertices
@@ -21,16 +15,6 @@ class Greedy_Search_Graph():
         self.capacity = capacity
         self.current_seat = 0
         
-    def update_edges(self):
-        for row in range(np.shape(self.distance_matrix)[0]):
-            row_edges = list()
-            for col in range(np.shape(self.distance_matrix)[1]):
-                if row == col:
-                    row_edges.append([row, col, 1e9])
-                else:
-                    row_edges.append([row, col, self.distance_matrix[row][col]])
-            self.edges.append(row_edges)
-    
     def children(self, node):
         if node == 0: 
             res = list()
@@ -58,7 +42,7 @@ class Greedy_Search_Graph():
                         res.append(n)
             return res
             
-        else: # destination point
+        else:
             res = list()
             for n in self.vertices:
                 if self.visited[n] == False:
@@ -70,13 +54,6 @@ class Greedy_Search_Graph():
                     else:
                         res.append(n)
             return res
-    
-    def compute_path(self):
-        cost = 0
-        for city in range(len(self.explored_set)-1):
-            cost += self. distance_matrix[self.explored_set[city]][self.explored_set[city+1]]
-        return cost
-    
     
     def heuristic_greedy_function(self, child, parent):
         return self.distance_matrix[parent][child]
@@ -117,7 +94,6 @@ class Greedy_Search_Graph():
             self.explored_set.append(parent[0])
 
             new_frontier = list()
-            # print(f"Parent: {parent[0]}, Children: {self.children(parent[0])}")
             for child in self.children(parent[0]):
                 self.ancestor[child] = parent[0]
                 self.cost[child] = self.heuristic_greedy_function(child, parent[0])
@@ -130,59 +106,18 @@ class Greedy_Search_Graph():
 
 
 def main():
-    import argparse
-    import sys
+    n, k = map(int, input().split())
+    num_vertices = 2 * n + 1
 
-    parser = argparse.ArgumentParser(description="Greedy solver for pickup-and-delivery VRP")
-    parser.add_argument("--input", "-i", help="Path to input test file (.txt). If omitted, read from stdin.")
-    parser.add_argument("--output", "-o", help="Write primary output (stdout) to this file.")
-    parser.add_argument("--log", help="Write logs (stderr) to this file.")
-    args = parser.parse_args()
+    distance_matrix = []
+    for _ in range(num_vertices):
+        distance_matrix.append(list(map(int, input().split())))
 
-    out_fp = open(args.output, "w", encoding="utf-8") if args.output else sys.stdout
-    err_fp = open(args.log, "w", encoding="utf-8") if args.log else sys.stderr
+    graph = Greedy_Search_Graph(num_vertices, distance_matrix, k)
+    _cost, route = graph.greedy_search()
 
-    try:
-        if args.input:
-            in_fp = open(args.input, "r", encoding="utf-8")
-            old_stdin = sys.stdin
-            sys.stdin = in_fp
-        else:
-            in_fp = None
-            old_stdin = None
-
-        try:
-            n, k = map(int, input().split())
-            num_vertices = 2 * n + 1
-
-            distance_matrix = []
-            for _ in range(num_vertices):
-                row = list(map(int, input().split()))
-                distance_matrix.append(row)
-
-            start_time = time.time()
-
-            graph = Greedy_Search_Graph(num_vertices, distance_matrix, k)
-            cost, route = graph.greedy_search()
-
-            end_time = time.time()
-            execution_time = end_time - start_time
-
-            print(n, file=out_fp)
-            seq = route[1:-1] if route else []
-            print(' '.join(map(str, seq)), file=out_fp)
-
-            #print(f"Cost: {cost}", file=err_fp)
-            #print(f"Execution time: {execution_time:.4f} seconds", file=err_fp)
-        finally:
-            if in_fp is not None:
-                sys.stdin = old_stdin
-                in_fp.close()
-    finally:
-        if out_fp is not sys.stdout:
-            out_fp.close()
-        if err_fp is not sys.stderr:
-            err_fp.close()
+    print(n)
+    print(' '.join(map(str, route[1:-1])))
 
 
 if __name__ == "__main__":
